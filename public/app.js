@@ -24,18 +24,20 @@ let profissionaisData = [];
 // INICIALIZAÇÃO DA APLICAÇÃO
 // ============================================
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   console.log('DOM carregado, inicializando aplicação...');
   try {
+    // Inicializar banco de dados
+    await db.init();
+    console.log('Banco de dados inicializado');
+    
     inicializarAplicacao();
-    carregarEstatisticas();
-    carregarProjetosRecentes();
+    await carregarEstatisticas();
+    await carregarProjetosRecentes();
     console.log('Aplicação inicializada com sucesso');
   } catch (error) {
     console.error('Erro na inicialização:', error);
   }
-  
-  // A inicialização da Google API será feita via callback do script
 });
 
 function inicializarAplicacao() {
@@ -625,7 +627,7 @@ function gerarRevisao() {
 // SALVAR PROJETO
 // ============================================
 
-function salvarProjeto(status) {
+async function salvarProjeto(status) {
   const projetoData = {
     id: currentProjectId || generateId(),
     quem_elaborou: document.getElementById('quemElaborou').value,
@@ -650,29 +652,19 @@ function salvarProjeto(status) {
     plano_comunicacao: [...planoComunicacaoData]
   };
 
-  // Salvar no localStorage
-  let projetos = JSON.parse(localStorage.getItem('projetos') || '[]');
-  
-  if (currentProjectId) {
-    // Atualizar projeto existente
-    const index = projetos.findIndex(p => p.id === currentProjectId);
-    if (index !== -1) {
-      projetos[index] = { ...projetos[index], ...projetoData };
-    }
-  } else {
-    // Novo projeto
-    projetos.push(projetoData);
+  try {
+    await db.salvarProjeto(projetoData);
+    showToast(status === 'finalizado' ? 'Projeto finalizado com sucesso!' : 'Rascunho salvo com sucesso!', 'success');
+    
+    resetForm();
+    currentProjectId = null;
+    navigateToPage('dashboard');
+    await carregarEstatisticas();
+    await carregarProjetosRecentes();
+  } catch (error) {
+    console.error('Erro ao salvar projeto:', error);
+    showToast('Erro ao salvar projeto', 'error');
   }
-  
-  localStorage.setItem('projetos', JSON.stringify(projetos));
-  
-  showToast(status === 'finalizado' ? 'Projeto finalizado com sucesso!' : 'Rascunho salvo com sucesso!', 'success');
-  
-  resetForm();
-  currentProjectId = null;
-  navigateToPage('dashboard');
-  carregarEstatisticas();
-  carregarProjetosRecentes();
 }
 
 function resetForm() {
@@ -708,19 +700,23 @@ function resetForm() {
 // CARREGAR DADOS DO BACKEND
 // ============================================
 
-function carregarEstatisticas() {
-  const projetos = JSON.parse(localStorage.getItem('projetos') || '[]');
-  const agora = new Date();
-  const esteMes = projetos.filter(p => {
-    const dataCadastro = new Date(p.data_cadastro);
-    return dataCadastro.getMonth() === agora.getMonth() && 
-           dataCadastro.getFullYear() === agora.getFullYear();
-  });
+async function carregarEstatisticas() {
+  try {
+    const projetos = await db.obterProjetos();
+    const agora = new Date();
+    const esteMes = projetos.filter(p => {
+      const dataCadastro = new Date(p.data_cadastro);
+      return dataCadastro.getMonth() === agora.getMonth() && 
+             dataCadastro.getFullYear() === agora.getFullYear();
+    });
 
-  document.getElementById('totalProjetos').textContent = projetos.length;
-  document.getElementById('projetosRascunho').textContent = projetos.filter(p => p.status === 'rascunho').length;
-  document.getElementById('projetosFinalizados').textContent = projetos.filter(p => p.status === 'finalizado').length;
-  document.getElementById('projetosEsteMes').textContent = esteMes.length;
+    document.getElementById('totalProjetos').textContent = projetos.length;
+    document.getElementById('projetosRascunho').textContent = projetos.filter(p => p.status === 'rascunho').length;
+    document.getElementById('projetosFinalizados').textContent = projetos.filter(p => p.status === 'finalizado').length;
+    document.getElementById('projetosEsteMes').textContent = esteMes.length;
+  } catch (error) {
+    console.error('Erro ao carregar estatísticas:', error);
+  }
 }
 
 function carregarProjetosRecentes() {
