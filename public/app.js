@@ -12,6 +12,8 @@ let currentStep = 1;
 let fichaTecnicaData = [];
 let planoComunicacaoData = [];
 let currentEditingProject = null;
+let currentProfissionalId = null;
+let profissionaisData = [];
 
 // ============================================
 // INICIALIZAÇÃO DA APLICAÇÃO
@@ -43,6 +45,9 @@ function inicializarAplicacao() {
   
   // Upload de arquivos
   setupFileUploads();
+  
+  // Upload de documentos de profissionais
+  setupDocumentUploads();
   
   // Adição manual de dados
   setupManualAdditions();
@@ -112,7 +117,9 @@ function navigateToPage(pageName) {
     const titles = {
       'dashboard': 'Dashboard',
       'novo-projeto': 'Novo Projeto',
-      'projetos': 'Projetos'
+      'projetos': 'Projetos',
+      'profissionais': 'Profissionais',
+      'novo-profissional': 'Novo Profissional'
     };
     document.getElementById('pageTitle').textContent = titles[pageName] || 'Dashboard';
   }
@@ -120,6 +127,8 @@ function navigateToPage(pageName) {
   // Carregar dados específicos da página
   if (pageName === 'projetos') {
     carregarTodosProjetos();
+  } else if (pageName === 'profissionais') {
+    carregarProfissionais();
   }
 }
 
@@ -144,6 +153,25 @@ function setupButtons() {
   document.getElementById('restoreDriveBtn').addEventListener('click', (e) => {
     e.preventDefault();
     restoreFromGoogleDrive();
+  });
+
+  // Botões de Profissionais
+  document.getElementById('btnNovoProfissional').addEventListener('click', () => {
+    resetProfissionalForm();
+    navigateToPage('novo-profissional');
+  });
+
+  document.getElementById('voltarProfissionais').addEventListener('click', () => {
+    navigateToPage('profissionais');
+  });
+
+  document.getElementById('cancelarProfissional').addEventListener('click', () => {
+    navigateToPage('profissionais');
+  });
+
+  document.getElementById('profissionalForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    salvarProfissional();
   });
 
   // Voltar ao dashboard
@@ -1123,6 +1151,269 @@ function escapeHtml(text) {
   const div = document.createElement('div');
   div.textContent = text;
   return div.innerHTML;
+}
+
+// ============================================
+// PROFISSIONAIS
+// ============================================
+
+function carregarProfissionais() {
+  const profissionais = JSON.parse(localStorage.getItem('profissionais') || '[]');
+  const tbody = document.getElementById('profissionaisBody');
+
+  if (profissionais.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="5" class="empty-state">
+          <div class="empty-state-icon">👥</div>
+          <p>Nenhum profissional cadastrado</p>
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  tbody.innerHTML = profissionais.map(prof => `
+    <tr>
+      <td><strong>${escapeHtml(prof.nome)}</strong></td>
+      <td>${escapeHtml(prof.telefone)}</td>
+      <td>${escapeHtml(prof.ceac) || '-'}</td>
+      <td>${prof.validade_ceac ? formatDate(prof.validade_ceac) : '-'}</td>
+      <td>
+        <div class="action-buttons">
+          <button class="btn btn-primary btn-sm" onclick="visualizarProfissional('${prof.id}')">👁️</button>
+          <button class="btn btn-secondary btn-sm" onclick="editarProfissional('${prof.id}')">✏️</button>
+          <button class="btn btn-danger btn-sm" onclick="excluirProfissional('${prof.id}')">🗑️</button>
+        </div>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function salvarProfissional() {
+  const profissionalData = {
+    id: currentProfissionalId || generateId(),
+    nome: document.getElementById('profNome').value,
+    telefone: document.getElementById('profTelefone').value,
+    endereco: document.getElementById('profEndereco').value,
+    data_nascimento: document.getElementById('profDataNascimento').value,
+    rg: document.getElementById('profRg').value,
+    cpf: document.getElementById('profCpf').value,
+    ceac: document.getElementById('profCeac').value,
+    validade_ceac: document.getElementById('profValidadeCeac').value,
+    projetos: document.getElementById('profProjetos').value,
+    data_cadastro: new Date().toISOString()
+  };
+
+  let profissionais = JSON.parse(localStorage.getItem('profissionais') || '[]');
+  
+  if (currentProfissionalId) {
+    const index = profissionais.findIndex(p => p.id === currentProfissionalId);
+    if (index !== -1) {
+      profissionais[index] = { ...profissionais[index], ...profissionalData };
+    }
+  } else {
+    profissionais.push(profissionalData);
+  }
+  
+  localStorage.setItem('profissionais', JSON.stringify(profissionais));
+  
+  showToast('Profissional salvo com sucesso!', 'success');
+  resetProfissionalForm();
+  currentProfissionalId = null;
+  navigateToPage('profissionais');
+}
+
+function editarProfissional(id) {
+  const profissionais = JSON.parse(localStorage.getItem('profissionais') || '[]');
+  const profissional = profissionais.find(p => p.id === id);
+  
+  if (!profissional) {
+    showToast('Profissional não encontrado', 'error');
+    return;
+  }
+  
+  currentProfissionalId = id;
+  
+  document.getElementById('profNome').value = profissional.nome || '';
+  document.getElementById('profTelefone').value = profissional.telefone || '';
+  document.getElementById('profEndereco').value = profissional.endereco || '';
+  document.getElementById('profDataNascimento').value = profissional.data_nascimento || '';
+  document.getElementById('profRg').value = profissional.rg || '';
+  document.getElementById('profCpf').value = profissional.cpf || '';
+  document.getElementById('profCeac').value = profissional.ceac || '';
+  document.getElementById('profValidadeCeac').value = profissional.validade_ceac || '';
+  document.getElementById('profProjetos').value = profissional.projetos || '';
+  
+  document.getElementById('profissionalFormTitle').textContent = 'Editar Profissional';
+  navigateToPage('novo-profissional');
+  showToast('Profissional carregado para edição', 'success');
+}
+
+function excluirProfissional(id) {
+  if (!confirm('Tem certeza que deseja excluir este profissional?')) {
+    return;
+  }
+
+  let profissionais = JSON.parse(localStorage.getItem('profissionais') || '[]');
+  profissionais = profissionais.filter(p => p.id !== id);
+  localStorage.setItem('profissionais', JSON.stringify(profissionais));
+  
+  showToast('Profissional excluído com sucesso!', 'success');
+  carregarProfissionais();
+}
+
+function visualizarProfissional(id) {
+  const profissionais = JSON.parse(localStorage.getItem('profissionais') || '[]');
+  const profissional = profissionais.find(p => p.id === id);
+  
+  if (!profissional) {
+    showToast('Profissional não encontrado', 'error');
+    return;
+  }
+  
+  const modalTitle = document.getElementById('modalProjectTitle');
+  const modalBody = document.getElementById('modalBody');
+
+  modalTitle.textContent = profissional.nome;
+
+  modalBody.innerHTML = `
+    <div class="project-details">
+      <div class="detail-section">
+        <h4>Dados Pessoais</h4>
+        <div class="detail-item">
+          <strong>Nome:</strong> ${escapeHtml(profissional.nome)}
+        </div>
+        <div class="detail-item">
+          <strong>Telefone:</strong> ${escapeHtml(profissional.telefone)}
+        </div>
+        <div class="detail-item">
+          <strong>Endereço:</strong> ${escapeHtml(profissional.endereco) || '-'}
+        </div>
+        <div class="detail-item">
+          <strong>Data de Nascimento:</strong> ${profissional.data_nascimento ? formatDate(profissional.data_nascimento) : '-'}
+        </div>
+        <div class="detail-item">
+          <strong>RG:</strong> ${escapeHtml(profissional.rg) || '-'}
+        </div>
+        <div class="detail-item">
+          <strong>CPF:</strong> ${escapeHtml(profissional.cpf) || '-'}
+        </div>
+      </div>
+
+      <div class="detail-section">
+        <h4>CEAC</h4>
+        <div class="detail-item">
+          <strong>Número:</strong> ${escapeHtml(profissional.ceac) || '-'}
+        </div>
+        <div class="detail-item">
+          <strong>Validade:</strong> ${profissional.validade_ceac ? formatDate(profissional.validade_ceac) : '-'}
+        </div>
+      </div>
+
+      <div class="detail-section">
+        <h4>Projetos</h4>
+        <div class="detail-item">
+          ${escapeHtml(profissional.projetos) || 'Nenhum projeto informado'}
+        </div>
+      </div>
+    </div>
+  `;
+
+  document.getElementById('editProjectBtn').onclick = () => {
+    fecharModal();
+    editarProfissional(id);
+  };
+
+  document.getElementById('deleteProjectBtn').onclick = () => {
+    if (confirm('Tem certeza que deseja excluir este profissional?')) {
+      excluirProfissional(id);
+      fecharModal();
+    }
+  };
+
+  abrirModal();
+}
+
+function resetProfissionalForm() {
+  document.getElementById('profissionalForm').reset();
+  currentProfissionalId = null;
+  document.getElementById('profissionalFormTitle').textContent = 'Cadastrar Novo Profissional';
+  
+  // Limpar arquivos anexados
+  document.getElementById('comprovanteResidenciaFile').style.display = 'none';
+  document.getElementById('documentoOficialFile').style.display = 'none';
+}
+
+function setupDocumentUploads() {
+  setupDocumentUpload('comprovanteResidenciaUpload', 'comprovante_residencia', 'comprovanteResidenciaFile');
+  setupDocumentUpload('documentoOficialUpload', 'documento_oficial', 'documentoOficialFile');
+}
+
+function setupDocumentUpload(areaId, inputName, fileDisplayId) {
+  const area = document.getElementById(areaId);
+  const input = area.querySelector(`input[name="${inputName}"]`);
+  const fileDisplay = document.getElementById(fileDisplayId);
+
+  area.addEventListener('click', () => {
+    input.click();
+  });
+
+  area.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    area.classList.add('dragover');
+  });
+
+  area.addEventListener('dragleave', () => {
+    area.classList.remove('dragover');
+  });
+
+  area.addEventListener('drop', (e) => {
+    e.preventDefault();
+    area.classList.remove('dragover');
+    if (e.dataTransfer.files.length > 0) {
+      handleDocumentUpload(e.dataTransfer.files[0], fileDisplay);
+    }
+  });
+
+  input.addEventListener('change', () => {
+    if (input.files.length > 0) {
+      handleDocumentUpload(input.files[0], fileDisplay);
+    }
+  });
+}
+
+function handleDocumentUpload(file, fileDisplay) {
+  const validTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'];
+  const maxSize = 5 * 1024 * 1024; // 5MB
+
+  if (!validTypes.includes(file.type)) {
+    showToast('Tipo de arquivo não suportado. Use PDF, JPG ou PNG.', 'error');
+    return;
+  }
+
+  if (file.size > maxSize) {
+    showToast('Arquivo muito grande. Máximo 5MB.', 'error');
+    return;
+  }
+
+  // Simular upload (em produção, enviaria para servidor)
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    fileDisplay.innerHTML = `
+      <span class="file-icon">✅</span>
+      <span>${file.name}</span>
+      <button type="button" class="remove-file" onclick="removeDocument('${fileDisplay.id}')">×</button>
+    `;
+    fileDisplay.style.display = 'flex';
+    showToast('Documento anexado com sucesso', 'success');
+  };
+  reader.readAsDataURL(file);
+}
+
+function removeDocument(fileDisplayId) {
+  document.getElementById(fileDisplayId).style.display = 'none';
+  showToast('Documento removido', 'success');
 }
 
 // ============================================
