@@ -525,134 +525,136 @@
           </div>
         </div>
       </section>
+
+      <!-- Página de Profissionais -->
+      <section class="page" id="page-profissionais">
+        <div class="profissionais-container">
+          <div class="profissionais-header">
+            <h2>Cadastro de Profissionais</h2>
+            <button class="btn btn-primary" id="btnNovoProfissional">
+              <span>➕</span> Novo Profissional
+            </button>
+          </div>
+
+          <div class="profissionais-list">
+            <div class="list-header">
+              <div class="filters">
+                <input type="text" id="searchProfissionais" placeholder="Buscar profissionais..." class="search-input">
+              </div>
+            </div>
+
+            <div class="profissionais-table-container">
+              <table class="profissionais-table">
+                <thead>
+                  <tr>
+                    <th>Nome</th>
+                    <th>Telefone</th>
+                    <th>CEAC</th>
+                    <th>Validade CEAC</th>
+                    <th>Ações</th>
+                  </tr>
+                </thead>
+                <tbody id="profissionaisBody">
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Formulário de Profissional -->
+      <section class="page" id="page-novo-profissional">
+        <div class="form-container">
+          <div class="form-header">
+            <h2 id="profissionalFormTitle">Cadastrar Novo Profissional</h2>
+            <button class="btn btn-secondary" id="voltarProfissionais">← Voltar</button>
+          </div>
+
+          <form id="profissionalForm">
+            <div class="form-grid">
+              <div class="form-group">
+                <label for="profNome">Nome Completo <span class="required">*</span></label>
+                <input type="text" id="profNome" required>
+              </div>
+
+              <div class="form-group">
+                <label for="profTelefone">Telefone <span class="required">*</span></label>
+                <input type="tel" id="profTelefone" placeholder="(61) 99999-9999" required>
+              </div>
+
+              <div class="form-group">
+                <label for="profEndereco">Endereço Completo</label>
+                <textarea id="profEndereco" rows="2" placeholder="Rua, número, bairro, cidade, CEP"></textarea>
+              </div>
+
+              <div class="form-group">
+                <label for="profDataNascimento">Data de Nascimento</label>
+                <input type="date" id="profDataNascimento">
+              </div>
+
+              <div class="form-group">
+                <label for="profRg">RG</label>
+                <input type="text" id="profRg" placeholder="0000000">
+              </div>
+
+              <div class="form-group">
+                <label for="profCpf">CPF <span class="required">*</span></label>
+                <input type="text" id="profCpf" placeholder="000.000.000-00" required>
+              </div>
+
+              <div class="form-group">
+                <label for="profCeac">Número CEAC</label>
+                <input type="text" id="profCeac" placeholder="CEAC000000">
+              </div>
+
+              <div class="form-group">
+                <label for="profValidadeCeac">Validade CEAC</label>
+                <input type="date" id="profValidadeCeac">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="profProjetos">Projetos Relacionados</label>
+              <textarea id="profProjetos" rows="3" placeholder="Liste os projetos em que este profissional participou ou participará"></textarea>
+            </div>
+
+            <div class="documents-section">
+              <h3>Documentos</h3>
+              
+              <div class="document-upload">
+                <label>Comprovante de Residência</label>
+                <div class="file-upload-area" id="comprovanteResidenciaUpload">
+                  <span class="upload-icon">📄</span>
+                  <p>Clique para selecionar ou arraste o arquivo</p>
+                  <span class="upload-hint">PDF, JPG ou PNG - Máx 5MB</span>
+                  <input type="file" name="comprovante_residencia" accept=".pdf,.jpg,.jpeg,.png" hidden>
+                </div>
+                <div class="uploaded-file" id="comprovanteResidenciaFile" style="display: none;"></div>
+              </div>
+
+              <div class="document-upload">
+                <label>Documento Oficial (RG/CNH)</label>
+                <div class="file-upload-area" id="documentoOficialUpload">
+                  <span class="upload-icon">🆔</span>
+                  <p>Clique para selecionar ou arraste o arquivo</p>
+                  <span class="upload-hint">PDF, JPG ou PNG - Máx 5MB</span>
+                  <input type="file" name="documento_oficial" accept=".pdf,.jpg,.jpeg,.png" hidden>
+                </div>
+                <div class="uploaded-file" id="documentoOficialFile" style="display: none;"></div>
+              </div>
+            </div>
+
+            <div class="form-actions">
+              <button type="button" class="btn btn-secondary" id="cancelarProfissional">Cancelar</button>
+              <button type="submit" class="btn btn-primary" id="salvarProfissional">Salvar Profissional</button>
+            </div>
+          </form>
+        </div>
+      </section>
     </div>
   </main>
 
-  <!-- Página de Profissionais -->
-  <section class="page" id="page-profissionais">
-    <div class="profissionais-container">
-      <div class="profissionais-header">
-        <h2>Cadastro de Profissionais</h2>
-        <button class="btn btn-primary" id="btnNovoProfissional">
-          <span>➕</span> Novo Profissional
-        </button>
-      </div>
-
-      <div class="profissionais-list">
-        <div class="list-header">
-          <div class="filters">
-            <input type="text" id="searchProfissionais" placeholder="Buscar profissionais..." class="search-input">
-          </div>
-        </div>
-
-        <div class="profissionais-table-container">
-          <table class="profissionais-table">
-            <thead>
-              <tr>
-                <th>Nome</th>
-                <th>Telefone</th>
-                <th>CEAC</th>
-                <th>Validade CEAC</th>
-                <th>Ações</th>
-              </tr>
-            </thead>
-            <tbody id="profissionaisBody">
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- Formulário de Profissional -->
-  <section class="page" id="page-novo-profissional">
-    <div class="form-container">
-      <div class="form-header">
-        <h2 id="profissionalFormTitle">Cadastrar Novo Profissional</h2>
-        <button class="btn btn-secondary" id="voltarProfissionais">← Voltar</button>
-      </div>
-
-      <form id="profissionalForm">
-        <div class="form-grid">
-          <div class="form-group">
-            <label for="profNome">Nome Completo <span class="required">*</span></label>
-            <input type="text" id="profNome" required>
-          </div>
-
-          <div class="form-group">
-            <label for="profTelefone">Telefone <span class="required">*</span></label>
-            <input type="tel" id="profTelefone" placeholder="(61) 99999-9999" required>
-          </div>
-
-          <div class="form-group">
-            <label for="profEndereco">Endereço Completo</label>
-            <textarea id="profEndereco" rows="2" placeholder="Rua, número, bairro, cidade, CEP"></textarea>
-          </div>
-
-          <div class="form-group">
-            <label for="profDataNascimento">Data de Nascimento</label>
-            <input type="date" id="profDataNascimento">
-          </div>
-
-          <div class="form-group">
-            <label for="profRg">RG</label>
-            <input type="text" id="profRg" placeholder="0000000">
-          </div>
-
-          <div class="form-group">
-            <label for="profCpf">CPF <span class="required">*</span></label>
-            <input type="text" id="profCpf" placeholder="000.000.000-00" required>
-          </div>
-
-          <div class="form-group">
-            <label for="profCeac">Número CEAC</label>
-            <input type="text" id="profCeac" placeholder="CEAC000000">
-          </div>
-
-          <div class="form-group">
-            <label for="profValidadeCeac">Validade CEAC</label>
-            <input type="date" id="profValidadeCeac">
-          </div>
-        </div>
-
-        <div class="form-group">
-          <label for="profProjetos">Projetos Relacionados</label>
-          <textarea id="profProjetos" rows="3" placeholder="Liste os projetos em que este profissional participou ou participará"></textarea>
-        </div>
-
-        <div class="documents-section">
-          <h3>Documentos</h3>
-          
-          <div class="document-upload">
-            <label>Comprovante de Residência</label>
-            <div class="file-upload-area" id="comprovanteResidenciaUpload">
-              <span class="upload-icon">📄</span>
-              <p>Clique para selecionar ou arraste o arquivo</p>
-              <span class="upload-hint">PDF, JPG ou PNG - Máx 5MB</span>
-              <input type="file" name="comprovante_residencia" accept=".pdf,.jpg,.jpeg,.png" hidden>
-            </div>
-            <div class="uploaded-file" id="comprovanteResidenciaFile" style="display: none;"></div>
-          </div>
-
-          <div class="document-upload">
-            <label>Documento Oficial (RG/CNH)</label>
-            <div class="file-upload-area" id="documentoOficialUpload">
-              <span class="upload-icon">🆔</span>
-              <p>Clique para selecionar ou arraste o arquivo</p>
-              <span class="upload-hint">PDF, JPG ou PNG - Máx 5MB</span>
-              <input type="file" name="documento_oficial" accept=".pdf,.jpg,.jpeg,.png" hidden>
-            </div>
-            <div class="uploaded-file" id="documentoOficialFile" style="display: none;"></div>
-          </div>
-        </div>
-
-        <div class="form-actions">
-          <button type="button" class="btn btn-secondary" id="cancelarProfissional">Cancelar</button>
-          <button type="submit" class="btn btn-primary" id="salvarProfissional">Salvar Profissional</button>
-        </div>
-      </form>
-    </div>
-  </section>
+  </main>
 
   <!-- Modal de Visualização de Projeto -->
   <div class="modal" id="projectModal">
