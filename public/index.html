@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>2 Produções - Plataforma de Gestão Cultural</title>
+  <link rel="stylesheet" href="styles.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <!-- Sidebar Lateral -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="logo">
+        <span class="logo-icon">🎭</span>
+        <span class="logo-text">2 Produções</span>
+      </div>
+    </div>
+    
+    <nav class="sidebar-nav">
+      <a href="#" class="nav-item active" data-page="dashboard">
+        <span class="nav-icon">📊</span>
+        <span class="nav-text">Dashboard</span>
+      </a>
+      <a href="#" class="nav-item" data-page="novo-projeto">
+        <span class="nav-icon">➕</span>
+        <span class="nav-text">Novo Projeto</span>
+      </a>
+      <a href="#" class="nav-item" data-page="projetos">
+        <span class="nav-icon">📁</span>
+        <span class="nav-text">Projetos</span>
+      </a>
+      <a href="#" class="nav-item" data-page="prestacao-contas">
+        <span class="nav-icon">💰</span>
+        <span class="nav-text">Prestação de Contas</span>
+      </a>
+    </nav>
+    
+    <div class="sidebar-footer">
+      <div class="user-info">
+        <div class="user-avatar">2P</div>
+        <div class="user-details">
+          <span class="user-name">2 Produções</span>
+          <span class="user-role">Administrador</span>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Conteúdo Principal -->
+  <main class="main-content">
+    <!-- Header -->
+    <header class="main-header">
+      <button class="menu-toggle" id="menuToggle">☰</button>
+      <h1 class="page-title" id="pageTitle">Dashboard</h1>
+      <div class="header-actions">
+        <button class="btn btn-primary" id="btnNovoProjeto">
+          <span>➕</span> Novo Projeto
+        </button>
+      </div>
+    </header>
+
+    <!-- Área de Conteúdo -->
+    <div class="content-area" id="contentArea">
+      <!-- Dashboard -->
+      <section class="page active" id="page-dashboard">
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-icon">📊</div>
+            <div class="stat-info">
+              <span class="stat-value" id="totalProjetos">0</span>
+              <span class="stat-label">Total de Projetos</span>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">📝</div>
+            <div class="stat-info">
+              <span class="stat-value" id="projetosRascunho">0</span>
+              <span class="stat-label">Em Rascunho</span>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">✅</div>
+            <div class="stat-info">
+              <span class="stat-value" id="projetosFinalizados">0</span>
+              <span class="stat-label">Finalizados</span>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">📅</div>
+            <div class="stat-info">
+              <span class="stat-value" id="projetosEsteMes">0</span>
+              <span class="stat-label">Este Mês</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="recent-projects">
+          <h2 class="section-title">Projetos Recentes</h2>
+          <div class="projects-table-container">
+            <table class="projects-table" id="recentProjectsTable">
+              <thead>
+                <tr>
+                  <th>Projeto</th>
+                  <th>Elaborado por</th>
+                  <th>Data de Cadastro</th>
+                  <th>Status</th>
+                  <th>Ações</th>
+                </tr>
+              </thead>
+              <tbody id="recentProjectsBody">
+                <!-- Preenchido via JavaScript -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- Página de Novo Projeto -->
+      <section class="page" id="page-novo-projeto">
+        <div class="form-container">
+          <div class="form-header">
+            <h2>Cadastrar Nova Proposta de Projeto Cultural</h2>
+            <p>Preencha os campos abaixo para criar uma nova proposta de projeto</p>
+          </div>
+
+          <!-- Stepper de Progresso -->
+          <div class="stepper">
+            <div class="step active" data-step="1">
+              <div class="step-number">1</div>
+              <div class="step-label">Identificação</div>
+            </div>
+            <div class="step" data-step="2">
+              <div class="step-number">2</div>
+              <div class="step-label">Descrição</div>
+            </div>
+            <div class="step" data-step="3">
+              <div class="step-number">3</div>
+              <div class="step-label">Público</div>
+            </div>
+            <div class="step" data-step="4">
+              <div class="step-number">4</div>
+              <div class="step-label">Parâmetros</div>
+            </div>
+            <div class="step" data-step="5">
+              <div class="step-number">5</div>
+              <div class="step-label">Anexos</div>
+            </div>
+          </div>
+
+          <form id="projectForm">
+            <!-- Step 1: Identificação -->
+            <div class="form-step active" data-step="1">
+              <h3 class="step-title">Identificação do Projeto</h3>
+              
+              <div class="form-group">
+                <label for="quemElaborou">Quem elaborou o Projeto? <span class="required">*</span></label>
+                <input type="text" id="quemElaborou" name="quem_elaborou" placeholder="Nome do responsável pela elaboração" required>
+              </div>
+
+              <div class="form-group">
+                <label for="nomeProjeto">Nome do Projeto <span class="required">*</span></label>
+                <input type="text" id="nomeProjeto" name="nome_projeto" placeholder="Digite o nome do projeto" required>
+              </div>
+
+              <div class="form-group">
+                <label for="objetoProjeto">Objeto do Projeto</label>
+                <textarea id="objetoProjeto" name="objeto_projeto" rows="3" placeholder="Descreva o objeto do projeto"></textarea>
+              </div>
+
+              <div class="form-group">
+                <label for="objetivos">Objetivos</label>
+                <textarea id="objetivos" name="objetivos" rows="3" placeholder="Liste os objetivos do projeto"></textarea>
+              </div>
+
+              <div class="form-group">
+                <label for="justificativa">Justificativa <span class="required">*</span></label>
+                <textarea id="justificativa" name="justificativa" rows="4" placeholder="Explique a justificativa do projeto" required></textarea>
+              </div>
+
+              <div class="form-group">
+                <label for="metasResultados">Metas, Resultados e Desdobramentos do Projeto</label>
+                <textarea id="metasResultados" name="metas_resultados" rows="4" placeholder="Descreva as metas, resultados esperados e desdobramentos"></textarea>
+              </div>
+
+              <div class="step-actions">
+                <button type="button" class="btn btn-primary next-step">Próximo →</button>
+              </div>
+            </div>
+
+            <!-- Step 2: Público e Acessibilidade -->
+            <div class="form-step" data-step="2">
+              <h3 class="step-title">Público-Alvo e Acessibilidade</h3>
+
+              <div class="form-group">
+                <label for="perfilPublico">Qual é o perfil do público que o projeto pretende atingir?</label>
+                <textarea id="perfilPublico" name="perfil_publico" rows="3" placeholder="Descreva o perfil do público-alvo (idade, perfil socioeconômico, etc.)"></textarea>
+              </div>
+
+              <div class="form-group">
+                <label for="estimativaPublico">Qual é a estimativa de público?</label>
+                <input type="text" id="estimativaPublico" name="estimativa_publico" placeholder="Ex: 500 pessoas, 1000 espectadores, etc.">
+              </div>
+
+              <div class="form-group">
+                <label for="estruturasAcessibilidade">Quais estruturas físicas e/ou logísticas acessíveis para as pessoas com mobilidade reduzida ou com deficiência estão previstas no projeto?</label>
+                <textarea id="estruturasAcessibilidade" name="estruturas_acessibilidade" rows="3" placeholder="Descreva as adaptações e estruturas de acessibilidade previstas"></textarea>
+              </div>
+
+              <div class="form-group">
+                <div class="alert alert-warning">
+                  <strong>⚠️ Atenção - Lei Distrital nº 6.858/2021:</strong>
+                  <p>Todos os projetos devem ser acessíveis aos deficientes visuais, devendo ser observado o disposto na Lei Distrital nº 6.858, de 27 de maio de 2021.</p>
+                </div>
+                <div class="checkbox-group">
+                  <input type="checkbox" id="leiAcessibilidadeVisual" name="lei_acessibilidade_visual">
+                  <label for="leiAcessibilidadeVisual">Declaro que o projeto atenderá às exigências de acessibilidade para deficientes visuais conforme a Lei Distrital nº 6.858/2021</label>
+                </div>
+              </div>
+
+              <div class="step-actions">
+                <button type="button" class="btn btn-secondary prev-step">← Voltar</button>
+                <button type="button" class="btn btn-primary next-step">Próximo →</button>
+              </div>
+            </div>
+
+            <!-- Step 3: Parâmetros Financeiros e Legais -->
+            <div class="form-step" data-step="3">
+              <h3 class="step-title">Parâmetros Financeiros e Legais</h3>
+
+              <div class="form-group">
+                <label class="section-label">Parâmetros do Projeto</label>
+                
+                <div class="checkbox-group">
+                  <input type="checkbox" id="cobrancaIngresso" name="cobranca_ingresso">
+                  <label for="cobrancaIngresso">Haverá cobrança de inscrição ou ingresso?</label>
+                </div>
+
+                <div class="checkbox-group">
+                  <input type="checkbox" id="arrecadacaoAlimentos" name="arrecadacao_alimentos">
+                  <label for="arrecadacaoAlimentos">O projeto prevê arrecadação de alimentos não perecíveis ou outros para doação?</label>
+                </div>
+
+                <div class="checkbox-group">
+                  <input type="checkbox" id="comercializacaoProdutos" name="comercializacao_produtos">
+                  <label for="comercializacaoProdutos">Haverá a comercialização de produtos (livros, CDs, DVDs, etc.) ou outros serviços gerados no âmbito do projeto?</label>
+                </div>
+
+                <div class="checkbox-group">
+                  <input type="checkbox" id="recursosOutrasFontes" name="recursos_outras_fontes">
+                  <label for="recursosOutrasFontes">O projeto possui ou está buscando recursos financeiros de outras fontes?</label>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label>Previsão do Período de Execução</label>
+                <div class="date-range">
+                  <div class="date-input">
+                    <label for="periodoInicio">Data de Início</label>
+                    <input type="date" id="periodoInicio" name="periodo_execucao_inicio">
+                  </div>
+                  <div class="date-input">
+                    <label for="periodoFim">Data de Término</label>
+                    <input type="date" id="periodoFim" name="periodo_execucao_fim">
+                  </div>
+                </div>
+              </div>
+
+              <div class="step-actions">
+                <button type="button" class="btn btn-secondary prev-step">← Voltar</button>
+                <button type="button" class="btn btn-primary next-step">Próximo →</button>
+              </div>
+            </div>
+
+            <!-- Step 4: Equipe e Plano de Comunicação -->
+            <div class="form-step" data-step="4">
+              <h3 class="step-title">Equipe Técnica e Plano de Comunicação</h3>
+
+              <!-- Abas -->
+              <div class="tabs">
+                <button class="tab-btn active" data-tab="ficha-tecnica">📋 Ficha Técnica</button>
+                <button class="tab-btn" data-tab="plano-comunicacao">📢 Plano de Comunicação</button>
+              </div>
+
+              <!-- Tab: Ficha Técnica -->
+              <div class="tab-content active" id="tab-ficha-tecnica">
+                <div class="import-section">
+                  <h4>Importar Ficha Técnica</h4>
+                  <p>Faça upload de uma planilha Excel com os seguintes campos: <strong>Nome do Profissional/Empresa</strong>, <strong>Função</strong>, <strong>CPF/CNPJ</strong></p>
+                  <div class="file-upload-area" id="fichaTecnicaUpload">
+                    <span class="upload-icon">📁</span>
+                    <p>Arraste e solte o arquivo aqui ou clique para selecionar</p>
+                    <span class="upload-hint">Apenas arquivos .xlsx ou .xls</span>
+                    <input type="file" name="ficha_tecnica_file" accept=".xlsx,.xls" hidden>
+                  </div>
+                  <button type="button" class="btn btn-secondary" id="importarFichaTecnicaBtn">Importar Planilha</button>
+                </div>
+
+                <div class="manual-add">
+                  <h4>Adicionar Manualmente</h4>
+                  <div class="manual-add-form">
+                    <input type="text" id="ftNome" placeholder="Nome do Profissional/Empresa">
+                    <input type="text" id="ftFuncao" placeholder="Função">
+                    <input type="text" id="ftCpfCnpj" placeholder="CPF/CNPJ">
+                    <button type="button" class="btn btn-primary" id="addFtBtn">Adicionar</button>
+                  </div>
+                </div>
+
+                <div class="table-container">
+                  <table class="data-table">
+                    <thead>
+                      <tr>
+                        <th>Profissional/Empresa</th>
+                        <th>Função</th>
+                        <th>CPF/CNPJ</th>
+                        <th>Ações</th>
+                      </tr>
+                    </thead>
+                    <tbody id="fichaTecnicaBody">
+                      <!-- Preenchido via JavaScript -->
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <!-- Tab: Plano de Comunicação -->
+              <div class="tab-content" id="tab-plano-comunicacao">
+                <div class="import-section">
+                  <h4>Importar Plano de Comunicação</h4>
+                  <p>Faça upload de uma planilha Excel com os seguintes campos: <strong>Item/Serviço</strong>, <strong>Formato/Suporte</strong>, <strong>Quantidade/Período</strong>, <strong>Veículo/Circulação</strong></p>
+                  <div class="file-upload-area" id="planoComunicacaoUpload">
+                    <span class="upload-icon">📁</span>
+                    <p>Arraste e solte o arquivo aqui ou clique para selecionar</p>
+                    <span class="upload-hint">Apenas arquivos .xlsx ou .xls</span>
+                    <input type="file" name="plano_comunicacao_file" accept=".xlsx,.xls" hidden>
+                  </div>
+                  <button type="button" class="btn btn-secondary" id="importarPlanoComunicacaoBtn">Importar Planilha</button>
+                </div>
+
+                <div class="manual-add">
+                  <h4>Adicionar Manualmente</h4>
+                  <div class="manual-add-form">
+                    <input type="text" id="pcItem" placeholder="Item/Serviço">
+                    <input type="text" id="pcFormato" placeholder="Formato/Suporte">
+                    <input type="text" id="pcQuantidade" placeholder="Quantidade/Período">
+                    <input type="text" id="pcVeiculo" placeholder="Veículo/Circulação">
+                    <button type="button" class="btn btn-primary" id="addPcBtn">Adicionar</button>
+                  </div>
+                </div>
+
+                <div class="table-container">
+                  <table class="data-table">
+                    <thead>
+                      <tr>
+                        <th>Item/Serviço</th>
+                        <th>Formato/Suporte</th>
+                        <th>Quantidade/Período</th>
+                        <th>Veículo/Circulação</th>
+                        <th>Ações</th>
+                      </tr>
+                    </thead>
+                    <tbody id="planoComunicacaoBody">
+                      <!-- Preenchido via JavaScript -->
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div class="step-actions">
+                <button type="button" class="btn btn-secondary prev-step">← Voltar</button>
+                <button type="button" class="btn btn-primary next-step">Próximo →</button>
+              </div>
+            </div>
+
+            <!-- Step 5: Revisão e Finalização -->
+            <div class="form-step" data-step="5">
+              <h3 class="step-title">Revisão e Finalização</h3>
+
+              <div class="review-section">
+                <div class="review-card">
+                  <h4>Resumo do Projeto</h4>
+                  <div id="reviewContent">
+                    <!-- Preenchido via JavaScript -->
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-actions">
+                <button type="button" class="btn btn-secondary" id="salvarRascunhoBtn">💾 Salvar Rascunho</button>
+                <button type="button" class="btn btn-success" id="finalizarBtn">✅ Finalizar Projeto</button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <!-- Página de Lista de Projetos -->
+      <section class="page" id="page-projetos">
+        <div class="projects-list-container">
+          <div class="list-header">
+            <h2>Todos os Projetos</h2>
+            <div class="filters">
+              <input type="text" id="searchProjetos" placeholder="Buscar projetos..." class="search-input">
+              <select id="filterStatus" class="filter-select">
+                <option value="">Todos os Status</option>
+                <option value="rascunho">Rascunho</option>
+                <option value="finalizado">Finalizado</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="projects-table-container">
+            <table class="projects-table">
+              <thead>
+                <tr>
+                  <th>Projeto</th>
+                  <th>Elaborado por</th>
+                  <th>Período de Execução</th>
+                  <th>Status</th>
+                  <th>Data de Cadastro</th>
+                  <th>Ações</th>
+                </tr>
+              </thead>
+              <tbody id="allProjectsBody">
+                <!-- Preenchido via JavaScript -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- Página de Prestação de Contas -->
+      <section class="page" id="page-prestacao-contas">
+        <div class="prestacao-container">
+          <div class="prestacao-header">
+            <h2>Prestação de Contas</h2>
+            <p>Gerencie os pagamentos e anexe comprovantes e notas fiscais dos projetos</p>
+          </div>
+
+          <!-- Seletor de Projeto -->
+          <div class="project-selector">
+            <div class="form-group">
+              <label for="seletorProjetoPC">Selecione um Projeto:</label>
+              <select id="seletorProjetoPC" class="project-select">
+                <option value="">-- Selecione um projeto finalizado --</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Totais do Projeto -->
+          <div class="totals-section" id="totalsSection" style="display: none;">
+            <div class="totals-grid">
+              <div class="total-card">
+                <div class="total-label">Total Previsto</div>
+                <div class="total-value" id="totalPrevisto">R$ 0,00</div>
+              </div>
+              <div class="total-card paid">
+                <div class="total-label">Total Pago</div>
+                <div class="total-value" id="totalPago">R$ 0,00</div>
+              </div>
+              <div class="total-card pending">
+                <div class="total-label">Total Pendente</div>
+                <div class="total-value" id="totalPendente">R$ 0,00</div>
+              </div>
+              <div class="total-card percent">
+                <div class="total-label">Percentual Pago</div>
+                <div class="total-value" id="percentualPago">0%</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Lista de Pagamentos -->
+          <div class="payments-section" id="paymentsSection" style="display: none;">
+            <div class="payments-header">
+              <h3>Itens de Pagamento</h3>
+              <span class="items-count" id="itemsCount">0 itens</span>
+            </div>
+
+            <div class="payments-table-container">
+              <table class="payments-table">
+                <thead>
+                  <tr>
+                    <th class="col-origem">Origem</th>
+                    <th class="col-descricao">Descrição</th>
+                    <th class="col-valor">Valor (R$)</th>
+                    <th class="col-data">Data Pagamento</th>
+                    <th class="col-status">Status</th>
+                    <th class="col-comprovante">Comprovante</th>
+                    <th class="col-nota">Nota Fiscal</th>
+                    <th class="col-acoes">Ações</th>
+                  </tr>
+                </thead>
+                <tbody id="paymentsBody">
+                  <!-- Preenchido via JavaScript -->
+                </tbody>
+              </table>
+            </div>
+
+            <div class="payments-empty" id="paymentsEmpty" style="display: none;">
+              <div class="empty-state-icon">📋</div>
+              <p>Este projeto não possui itens de pagamento.</p>
+              <p class="empty-hint">Adicione profissionais na Ficha Técnica e itens no Plano de Comunicação no cadastro do projeto.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <!-- Modal de Visualização de Projeto -->
+  <div class="modal" id="projectModal">
+    <div class="modal-content large">
+      <div class="modal-header">
+        <h2 id="modalProjectTitle">Detalhes do Projeto</h2>
+        <button class="close-btn" id="closeModal">&times;</button>
+      </div>
+      <div class="modal-body" id="modalBody">
+        <!-- Preenchido via JavaScript -->
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="editProjectBtn">✏️ Editar</button>
+        <button class="btn btn-danger" id="deleteProjectBtn">🗑️ Excluir</button>
+        <button class="btn btn-primary" id="closeModalBtn">Fechar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de Visualização de PDF -->
+  <div class="modal" id="pdfModal">
+    <div class="modal-content pdf-modal">
+      <div class="modal-header">
+        <h2 id="pdfModalTitle">Documento</h2>
+        <button class="close-btn" id="closePdfModal">&times;</button>
+      </div>
+      <div class="modal-body pdf-body">
+        <iframe id="pdfViewer" src="" frameborder="0"></iframe>
+      </div>
+      <div class="modal-footer">
+        <a href="#" target="_blank" class="btn btn-primary" id="downloadPdfBtn">📥 Baixar PDF</a>
+        <button class="btn btn-secondary" id="closePdfModalBtn">Fechar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notifications -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- Templates para Upload -->
+  <div id="uploadTemplates" style="display: none;">
+    <!-- Template: Área de upload de comprovante -->
+    <div class="upload-area-small" data-type="comprovante">
+      <input type="file" accept="application/pdf" hidden>
+      <span class="upload-icon-small">📄</span>
+      <span class="upload-label">Anexar</span>
+    </div>
+    
+    <!-- Template: Área de upload de nota fiscal -->
+    <div class="upload-area-small" data-type="nota_fiscal">
+      <input type="file" accept="application/pdf" hidden>
+      <span class="upload-icon-small">🧾</span>
+      <span class="upload-label">Anexar</span>
+    </div>
+    
+    <!-- Template: Botão quando arquivo anexado -->
+    <div class="uploaded-indicator">
+      <span class="file-icon">✅</span>
+      <span class="file-name"></span>
+      <button class="remove-file" title="Remover arquivo">×</button>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
