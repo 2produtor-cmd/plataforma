@@ -3,9 +3,14 @@
  * Aplicação JavaScript Principal
  */
 
-// ============================================
-// VARIÁVEIS GLOBAIS
-// ============================================
+// Tratamento global de erros
+window.addEventListener('error', (e) => {
+  console.error('Erro JavaScript:', e.error);
+});
+
+window.addEventListener('unhandledrejection', (e) => {
+  console.error('Promise rejeitada:', e.reason);
+});
 
 let currentProjectId = null;
 let currentStep = 1;
@@ -20,9 +25,15 @@ let profissionaisData = [];
 // ============================================
 
 document.addEventListener('DOMContentLoaded', () => {
-  inicializarAplicacao();
-  carregarEstatisticas();
-  carregarProjetosRecentes();
+  console.log('DOM carregado, inicializando aplicação...');
+  try {
+    inicializarAplicacao();
+    carregarEstatisticas();
+    carregarProjetosRecentes();
+    console.log('Aplicação inicializada com sucesso');
+  } catch (error) {
+    console.error('Erro na inicialização:', error);
+  }
   
   // A inicialização da Google API será feita via callback do script
 });
@@ -298,12 +309,16 @@ function validarFormulario() {
 // ============================================
 
 function setupTabs() {
+  console.log('Configurando abas...');
   const tabButtons = document.querySelectorAll('.tab-btn');
+  console.log('Botões encontrados:', tabButtons.length);
 
-  tabButtons.forEach(btn => {
+  tabButtons.forEach((btn, index) => {
+    console.log(`Configurando botão ${index}:`, btn.dataset.tab);
     btn.addEventListener('click', (e) => {
-      e.preventDefault(); // Prevenir submit do formulário
-      e.stopPropagation(); // Parar propagação do evento
+      console.log('Clique na aba:', btn.dataset.tab);
+      e.preventDefault();
+      e.stopPropagation();
       
       const tabId = btn.dataset.tab;
 
@@ -315,7 +330,13 @@ function setupTabs() {
       document.querySelectorAll('.tab-content').forEach(content => {
         content.classList.remove('active');
       });
-      document.getElementById(`tab-${tabId}`).classList.add('active');
+      const targetTab = document.getElementById(`tab-${tabId}`);
+      if (targetTab) {
+        targetTab.classList.add('active');
+        console.log('Aba ativada:', tabId);
+      } else {
+        console.error('Aba não encontrada:', `tab-${tabId}`);
+      }
     });
   });
 }
@@ -1466,7 +1487,7 @@ let isSignedIn = false;
 // Inicializar Google API
 function initGoogleAPI() {
   console.log('Google API carregada com sucesso');
-  initializeGoogleAPI();
+  // A inicialização será feita quando o usuário clicar em conectar
 }
 
 function handleGoogleAPIError() {
