@@ -478,13 +478,15 @@ function setupManualAdditions() {
       id: generateId(),
       nome_profissional: nome,
       funcao: funcao,
-      cpf_cnpj: cpf
+      cpf_cnpj: cpf,
+      valor: document.getElementById('ftValor').value || 0
     });
 
     // Limpar campos
     document.getElementById('ftNome').value = '';
     document.getElementById('ftFuncao').value = '';
     document.getElementById('ftCpfCnpj').value = '';
+    document.getElementById('ftValor').value = '';
 
     atualizarTabelas();
     showToast('Profissional adicionado com sucesso', 'success');
@@ -507,7 +509,8 @@ function setupManualAdditions() {
       item_servico: item,
       formato_suporte: formato,
       quantidade_periodo: quantidade,
-      veiculo_circulacao: veiculo
+      veiculo_circulacao: veiculo,
+      valor: document.getElementById('pcValor').value || 0
     });
 
     // Limpar campos
@@ -515,6 +518,7 @@ function setupManualAdditions() {
     document.getElementById('pcFormato').value = '';
     document.getElementById('pcQuantidade').value = '';
     document.getElementById('pcVeiculo').value = '';
+    document.getElementById('pcValor').value = '';
 
     atualizarTabelas();
     showToast('Item adicionado com sucesso', 'success');
@@ -529,11 +533,12 @@ function atualizarTabelas() {
       <td>${escapeHtml(item.nome_professional || item.nome_profissional || '')}</td>
       <td>${escapeHtml(item.funcao || item.funcao || '')}</td>
       <td>${escapeHtml(item.cpf_cnpj || '')}</td>
+      <td>R$ ${parseFloat(item.valor || 0).toFixed(2)}</td>
       <td>
         <button class="btn btn-delete btn-sm" onclick="removerItem('ficha', '${item.id}')">🗑️</button>
       </td>
     </tr>
-  `).join('') || '<tr><td colspan="4" class="empty-state">Nenhum profissional adicionado</td></tr>';
+  `).join('') || '<tr><td colspan="5" class="empty-state">Nenhum profissional adicionado</td></tr>';
 
   // Atualizar tabela do Plano de Comunicação
   const pcBody = document.getElementById('planoComunicacaoBody');
@@ -543,11 +548,12 @@ function atualizarTabelas() {
       <td>${escapeHtml(item.formato_suporte || item.formato || item.suporte || '')}</td>
       <td>${escapeHtml(item.quantidade_periodo || item.quantidade || item.periodo || '')}</td>
       <td>${escapeHtml(item.veiculo_circulacao || item.veiculo || item.circulacao || '')}</td>
+      <td>R$ ${parseFloat(item.valor || 0).toFixed(2)}</td>
       <td>
         <button class="btn btn-delete btn-sm" onclick="removerItem('comunicacao', '${item.id}')">🗑️</button>
       </td>
     </tr>
-  `).join('') || '<tr><td colspan="5" class="empty-state">Nenhum item adicionado</td></tr>';
+  `).join('') || '<tr><td colspan="6" class="empty-state">Nenhum item adicionado</td></tr>';
 }
 
 function removerItem(tipo, id) {
@@ -639,7 +645,7 @@ function salvarProjeto(status) {
     recursos_outras_fontes: document.getElementById('recursosOutrasFontes').checked,
     periodo_execucao_inicio: document.getElementById('periodoInicio').value,
     periodo_execucao_fim: document.getElementById('periodoFim').value,
-    status: status,
+    status: document.getElementById('statusProjeto') ? document.getElementById('statusProjeto').value : status,
     data_cadastro: new Date().toISOString(),
     ficha_tecnica: [...fichaTecnicaData],
     plano_comunicacao: [...planoComunicacaoData]
@@ -1161,6 +1167,31 @@ function escapeHtml(text) {
   const div = document.createElement('div');
   div.textContent = text;
   return div.innerHTML;
+}
+
+function getStatusLabel(status) {
+  const statusMap = {
+    'rascunho': '📝 Rascunho',
+    'escrito': '📝 Escrito',
+    'aprovado': '✅ Aprovado',
+    'em_execucao': '🚀 Em Execução',
+    'prestacao_contas': '📊 Prestação de Contas',
+    'finalizado': '✅ Finalizado'
+  };
+  return statusMap[status] || status;
+}
+
+function toggleFormReadonly(readonly) {
+  const inputs = document.querySelectorAll('#projectForm input, #projectForm textarea, #projectForm select');
+  inputs.forEach(input => {
+    input.readOnly = readonly;
+    input.disabled = readonly;
+  });
+  
+  const buttons = document.querySelectorAll('#projectForm button');
+  buttons.forEach(button => {
+    button.disabled = readonly;
+  });
 }
 
 // ============================================
