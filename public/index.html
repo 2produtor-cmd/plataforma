@@ -724,6 +724,22 @@
     </div>
   </div>
 
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+    import { getFirestore } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+    
+    const firebaseConfig = {
+      apiKey: "AIzaSyBvOw5RixrqvyT2FnVWBd4fGWotcHG00Nc",
+      authDomain: "producoes-2024.firebaseapp.com",
+      projectId: "producoes-2024",
+      storageBucket: "producoes-2024.appspot.com",
+      messagingSenderId: "123456789",
+      appId: "1:123456789:web:abcdef123456"
+    };
+    
+    window.firebaseApp = initializeApp(firebaseConfig);
+    window.firestore = getFirestore(window.firebaseApp);
+  </script>
   <script src="db.js"></script>
   <script src="app.js"></script>
 </body>

@@ -1,85 +1,55 @@
 /**
- * Database Manager - IndexedDB
+ * Firebase Database Manager
  */
 
 class DatabaseManager {
   constructor() {
-    this.dbName = '2ProducoesDB';
-    this.version = 1;
     this.db = null;
   }
 
   async init() {
-    return new Promise((resolve, reject) => {
-      const request = indexedDB.open(this.dbName, this.version);
-      
-      request.onerror = () => reject(request.error);
-      request.onsuccess = () => {
-        this.db = request.result;
-        resolve(this.db);
-      };
-      
-      request.onupgradeneeded = (event) => {
-        const db = event.target.result;
-        
-        // Store para projetos
-        if (!db.objectStoreNames.contains('projetos')) {
-          const projetosStore = db.createObjectStore('projetos', { keyPath: 'id' });
-          projetosStore.createIndex('nome_projeto', 'nome_projeto', { unique: false });
-          projetosStore.createIndex('status', 'status', { unique: false });
-        }
-        
-        // Store para profissionais
-        if (!db.objectStoreNames.contains('profissionais')) {
-          const profissionaisStore = db.createObjectStore('profissionais', { keyPath: 'id' });
-          profissionaisStore.createIndex('nome', 'nome', { unique: false });
-        }
-      };
-    });
+    // Aguardar Firebase carregar
+    while (!window.firestore) {
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+    this.db = window.firestore;
+    console.log('Firebase inicializado');
   }
 
   async salvarProjeto(projeto) {
-    const transaction = this.db.transaction(['projetos'], 'readwrite');
-    const store = transaction.objectStore('projetos');
-    return store.put(projeto);
+    const { doc, setDoc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+    const docRef = doc(this.db, 'projetos', projeto.id);
+    return setDoc(docRef, projeto);
   }
 
   async obterProjetos() {
-    const transaction = this.db.transaction(['projetos'], 'readonly');
-    const store = transaction.objectStore('projetos');
-    return new Promise((resolve, reject) => {
-      const request = store.getAll();
-      request.onsuccess = () => resolve(request.result);
-      request.onerror = () => reject(request.error);
-    });
+    const { collection, getDocs } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+    const querySnapshot = await getDocs(collection(this.db, 'projetos'));
+    return querySnapshot.docs.map(doc => doc.data());
   }
 
   async excluirProjeto(id) {
-    const transaction = this.db.transaction(['projetos'], 'readwrite');
-    const store = transaction.objectStore('projetos');
-    return store.delete(id);
+    const { doc, deleteDoc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+    const docRef = doc(this.db, 'projetos', id);
+    return deleteDoc(docRef);
   }
 
   async salvarProfissional(profissional) {
-    const transaction = this.db.transaction(['profissionais'], 'readwrite');
-    const store = transaction.objectStore('profissionais');
-    return store.put(profissional);
+    const { doc, setDoc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+    const docRef = doc(this.db, 'profissionais', profissional.id);
+    return setDoc(docRef, profissional);
   }
 
   async obterProfissionais() {
-    const transaction = this.db.transaction(['profissionais'], 'readonly');
-    const store = transaction.objectStore('profissionais');
-    return new Promise((resolve, reject) => {
-      const request = store.getAll();
-      request.onsuccess = () => resolve(request.result);
-      request.onerror = () => reject(request.error);
-    });
+    const { collection, getDocs } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+    const querySnapshot = await getDocs(collection(this.db, 'profissionais'));
+    return querySnapshot.docs.map(doc => doc.data());
   }
 
   async excluirProfissional(id) {
-    const transaction = this.db.transaction(['profissionais'], 'readwrite');
-    const store = transaction.objectStore('profissionais');
-    return store.delete(id);
+    const { doc, deleteDoc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+    const docRef = doc(this.db, 'profissionais', id);
+    return deleteDoc(docRef);
   }
 }
 
