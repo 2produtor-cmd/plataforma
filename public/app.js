@@ -1496,36 +1496,39 @@ function handleGoogleAPIError() {
 }
 
 function initializeGoogleAPI() {
-  if (typeof window.gapi === 'undefined') {
-    console.log('Google API não disponível ainda');
-    return;
-  }
-  
-  gapi = window.gapi;
-  
-  gapi.load('auth2:client', async () => {
-    try {
-      await gapi.client.init({
-        apiKey: GOOGLE_CONFIG.API_KEY,
-        clientId: GOOGLE_CONFIG.CLIENT_ID,
-        discoveryDocs: [GOOGLE_CONFIG.DISCOVERY_DOC],
-        scope: GOOGLE_CONFIG.SCOPES
-      });
-      
-      isGoogleApiLoaded = true;
-      const authInstance = gapi.auth2.getAuthInstance();
-      isSignedIn = authInstance.isSignedIn.get();
-      
-      updateSyncButton();
-      
-      if (isSignedIn) {
-        showToast('Conectado ao Google Drive', 'success');
-      }
-      console.log('Google Drive API inicializada com sucesso');
-    } catch (error) {
-      console.error('Erro ao inicializar Google API:', error);
-      // Não mostrar toast de erro na inicialização
+  return new Promise((resolve, reject) => {
+    if (typeof window.gapi === 'undefined') {
+      reject(new Error('Google API não disponível'));
+      return;
     }
+    
+    gapi = window.gapi;
+    
+    gapi.load('auth2:client', async () => {
+      try {
+        await gapi.client.init({
+          apiKey: GOOGLE_CONFIG.API_KEY,
+          clientId: GOOGLE_CONFIG.CLIENT_ID,
+          discoveryDocs: [GOOGLE_CONFIG.DISCOVERY_DOC],
+          scope: GOOGLE_CONFIG.SCOPES
+        });
+        
+        isGoogleApiLoaded = true;
+        const authInstance = gapi.auth2.getAuthInstance();
+        isSignedIn = authInstance.isSignedIn.get();
+        
+        updateSyncButton();
+        
+        if (isSignedIn) {
+          showToast('Conectado ao Google Drive', 'success');
+        }
+        console.log('Google Drive API inicializada com sucesso');
+        resolve();
+      } catch (error) {
+        console.error('Erro ao inicializar Google API:', error);
+        reject(error);
+      }
+    });
   });
 }
 
@@ -1550,18 +1553,19 @@ function updateSyncButton() {
 async function toggleGoogleDrive() {
   if (!isGoogleApiLoaded) {
     showToast('Inicializando Google API...', 'info');
-    // Tentar inicializar novamente
-    initializeGoogleAPI();
-    return;
+    try {
+      await initializeGoogleAPI();
+    } catch (error) {
+      showToast('Erro ao conectar com Google Drive', 'error');
+      return;
+    }
   }
   
   const authInstance = gapi.auth2.getAuthInstance();
   
   if (isSignedIn) {
-    // Fazer backup
     await backupToGoogleDrive();
   } else {
-    // Conectar
     try {
       await authInstance.signIn();
       isSignedIn = true;
