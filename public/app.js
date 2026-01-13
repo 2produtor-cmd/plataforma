@@ -24,9 +24,19 @@ document.addEventListener('DOMContentLoaded', () => {
   carregarEstatisticas();
   carregarProjetosRecentes();
   
-  // Inicializar Google Drive API
+  // Inicializar Google Drive API após um delay
   setTimeout(() => {
-    initializeGoogleAPI();
+    if (typeof window.gapi !== 'undefined') {
+      initializeGoogleAPI();
+    } else {
+      console.log('Google API ainda não carregada, aguardando...');
+      // Tentar novamente em 2 segundos
+      setTimeout(() => {
+        if (typeof window.gapi !== 'undefined') {
+          initializeGoogleAPI();
+        }
+      }, 2000);
+    }
   }, 1000);
 });
 
@@ -1433,9 +1443,27 @@ let isGoogleApiLoaded = false;
 let isSignedIn = false;
 
 // Inicializar Google API
+// Inicializar Google API
+function initGoogleAPI() {
+  console.log('Google API carregada com sucesso');
+  // A inicialização será feita quando o usuário clicar em conectar
+}
+
+function handleGoogleAPIError() {
+  console.error('Erro ao carregar Google API');
+  showToast('Erro ao carregar Google API. Verifique sua conexão.', 'error');
+}
+
 function initializeGoogleAPI() {
   if (typeof window.gapi === 'undefined') {
-    showToast('Google API não carregada. Verifique sua conexão.', 'error');
+    showToast('Google API não disponível. Tentando recarregar...', 'warning');
+    // Tentar carregar novamente
+    const script = document.createElement('script');
+    script.src = 'https://apis.google.com/js/api.js';
+    script.onload = () => {
+      setTimeout(initializeGoogleAPI, 500);
+    };
+    document.head.appendChild(script);
     return;
   }
   
@@ -1459,6 +1487,7 @@ function initializeGoogleAPI() {
       if (isSignedIn) {
         showToast('Conectado ao Google Drive', 'success');
       }
+      console.log('Google Drive API inicializada com sucesso');
     } catch (error) {
       console.error('Erro ao inicializar Google API:', error);
       showToast('Erro ao conectar com Google Drive', 'error');
@@ -1486,7 +1515,9 @@ function updateSyncButton() {
 // Conectar/Desconectar Google Drive
 async function toggleGoogleDrive() {
   if (!isGoogleApiLoaded) {
-    showToast('Google API ainda não foi carregada', 'warning');
+    showToast('Inicializando Google API...', 'info');
+    // Tentar inicializar novamente
+    initializeGoogleAPI();
     return;
   }
   
