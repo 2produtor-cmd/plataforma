@@ -352,61 +352,17 @@ function handleFileUpload(file, buttonId, processor) {
     return;
   }
 
-  const formData = new FormData();
-  formData.append('arquivo', file);
-
-  // Se temos um projeto atual, usar ID
-  if (currentProjectId) {
-    const endpoint = buttonId.includes('fichaTecnica') 
-      ? `/api/projetos/${currentProjectId}/ficha-tecnica/importar`
-      : `/api/projetos/${currentProjectId}/plano-comunicacao/importar`;
-
-    fetch(endpoint, {
-      method: 'POST',
-      body: formData
-    })
-    .then(response => response.json())
-    .then(data => {
-      if (data.success) {
-        showToast(data.message, 'success');
-        if (buttonId.includes('fichaTecnica')) {
-          processarDadosAPI(data.data, 'ficha');
-        } else {
-          processarDadosAPI(data.data, 'comunicacao');
-        }
-        atualizarTabelas();
-      } else {
-        showToast(data.error, 'error');
-      }
-    })
-    .catch(error => {
-      showToast('Erro ao processar arquivo: ' + error.message, 'error');
-    });
-  } else {
-    // Processar localmente para novo projeto
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      try {
-        const data = new Uint8Array(e.target.result);
-        const workbook = XLSX.read(data, { type: 'array' });
-        const sheetName = workbook.SheetNames[0];
-        const worksheet = workbook.Sheets[sheetName];
-        const jsonData = XLSX.utils.sheet_to_json(worksheet);
-        
-        if (buttonId.includes('fichaTecnica')) {
-          processarDadosAPI(jsonData, 'ficha');
-        } else {
-          processarDadosAPI(jsonData, 'comunicacao');
-        }
-        
-        showToast(`${jsonData.length} registros importados com sucesso`, 'success');
-        atualizarTabelas();
-      } catch (error) {
-        showToast('Erro ao ler arquivo: ' + error.message, 'error');
-      }
-    };
-    reader.readAsArrayBuffer(file);
-  }
+  // Processar localmente
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      // Simular processamento de Excel (seria necessário biblioteca XLSX)
+      showToast('Funcionalidade de importação de Excel não disponível na versão estática', 'warning');
+    } catch (error) {
+      showToast('Erro ao ler arquivo: ' + error.message, 'error');
+    }
+  };
+  reader.readAsArrayBuffer(file);
 }
 
 function processarDadosAPI(data, tipo) {
@@ -611,6 +567,7 @@ function gerarRevisao() {
 
 function salvarProjeto(status) {
   const projetoData = {
+    id: currentProjectId || generateId(),
     quem_elaborou: document.getElementById('quemElaborou').value,
     nome_projeto: document.getElementById('nomeProjeto').value,
     objeto_projeto: document.getElementById('objetoProjeto').value,
@@ -627,78 +584,34 @@ function salvarProjeto(status) {
     recursos_outras_fontes: document.getElementById('recursosOutrasFontes').checked,
     periodo_execucao_inicio: document.getElementById('periodoInicio').value,
     periodo_execucao_fim: document.getElementById('periodoFim').value,
-    status: status
+    status: status,
+    data_cadastro: new Date().toISOString(),
+    ficha_tecnica: [...fichaTecnicaData],
+    plano_comunicacao: [...planoComunicacaoData]
   };
 
-  const method = currentProjectId ? 'PUT' : 'POST';
-  const url = currentProjectId ? `/api/projetos/${currentProjectId}` : '/api/projetos';
-
-  fetch(url, {
-    method: method,
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify(projetoData)
-  })
-  .then(response => response.json())
-  .then(data => {
-    if (data.success) {
-      const projectId = currentProjectId || data.id;
-
-      // Se criou novo projeto, salvar dados das tabelas
-      if (!currentProjectId) {
-        return Promise.all([
-          salvarDadosTabela(projectId, 'ficha-tecnica', fichaTecnicaData),
-          salvarDadosTabela(projectId, 'plano-comunicacao', planoComunicacaoData)
-        ]).then(() => projectId);
-      }
-
-      return projectId;
-    } else {
-      throw new Error(data.error);
+  // Salvar no localStorage
+  let projetos = JSON.parse(localStorage.getItem('projetos') || '[]');
+  
+  if (currentProjectId) {
+    // Atualizar projeto existente
+    const index = projetos.findIndex(p => p.id === currentProjectId);
+    if (index !== -1) {
+      projetos[index] = { ...projetos[index], ...projetoData };
     }
-  })
-  .then(projectId => {
-    showToast(status === 'finalizado' ? 'Projeto finalizado com sucesso!' : 'Rascunho salvo com sucesso!', 'success');
-    resetForm();
-    currentProjectId = null;
-    navigateToPage('dashboard');
-    carregarEstatisticas();
-    carregarProjetosRecentes();
-  })
-  .catch(error => {
-    showToast('Erro ao salvar projeto: ' + error.message, 'error');
-  });
-}
-
-function salvarDadosTabela(projectId, endpoint, data) {
-  const promises = data.map(item => {
-    let body;
-    if (endpoint === 'ficha-tecnica') {
-      body = {
-        nome_profissional: item.nome_professional || item.nome_profissional,
-        funcao: item.funcao || item.funcao,
-        cpf_cnpj: item.cpf_cnpj
-      };
-    } else {
-      body = {
-        item_servico: item.item_servico || item.item,
-        formato_suporte: item.formato_suporte || item.formato || item.suporte,
-        quantidade_periodo: item.quantidade_periodo || item.quantidade || item.periodo,
-        veiculo_circulacao: item.veiculo_circulacao || item.veiculo || item.circulacao
-      };
-    }
-
-    return fetch(`/api/projetos/${projectId}/${endpoint}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(body)
-    });
-  });
-
-  return Promise.all(promises);
+  } else {
+    // Novo projeto
+    projetos.push(projetoData);
+  }
+  
+  localStorage.setItem('projetos', JSON.stringify(projetos));
+  
+  showToast(status === 'finalizado' ? 'Projeto finalizado com sucesso!' : 'Rascunho salvo com sucesso!', 'success');
+  resetForm();
+  currentProjectId = null;
+  navigateToPage('dashboard');
+  carregarEstatisticas();
+  carregarProjetosRecentes();
 }
 
 function resetForm() {
@@ -735,114 +648,88 @@ function resetForm() {
 // ============================================
 
 function carregarEstatisticas() {
-  fetch('/api/projetos')
-    .then(response => response.json())
-    .then(data => {
-      if (data.success) {
-        const projetos = data.data;
-        const agora = new Date();
-        const esteMes = projetos.filter(p => {
-          const dataCadastro = new Date(p.data_cadastro);
-          return dataCadastro.getMonth() === agora.getMonth() && 
-                 dataCadastro.getFullYear() === agora.getFullYear();
-        });
+  const projetos = JSON.parse(localStorage.getItem('projetos') || '[]');
+  const agora = new Date();
+  const esteMes = projetos.filter(p => {
+    const dataCadastro = new Date(p.data_cadastro);
+    return dataCadastro.getMonth() === agora.getMonth() && 
+           dataCadastro.getFullYear() === agora.getFullYear();
+  });
 
-        document.getElementById('totalProjetos').textContent = projetos.length;
-        document.getElementById('projetosRascunho').textContent = projetos.filter(p => p.status === 'rascunho').length;
-        document.getElementById('projetosFinalizados').textContent = projetos.filter(p => p.status === 'finalizado').length;
-        document.getElementById('projetosEsteMes').textContent = esteMes.length;
-      }
-    })
-    .catch(error => {
-      console.error('Erro ao carregar estatísticas:', error);
-    });
+  document.getElementById('totalProjetos').textContent = projetos.length;
+  document.getElementById('projetosRascunho').textContent = projetos.filter(p => p.status === 'rascunho').length;
+  document.getElementById('projetosFinalizados').textContent = projetos.filter(p => p.status === 'finalizado').length;
+  document.getElementById('projetosEsteMes').textContent = esteMes.length;
 }
 
 function carregarProjetosRecentes() {
-  fetch('/api/projetos')
-    .then(response => response.json())
-    .then(data => {
-      if (data.success) {
-        const tbody = document.getElementById('recentProjectsBody');
-        const projetos = data.data.slice(0, 5);
+  const projetos = JSON.parse(localStorage.getItem('projetos') || '[]');
+  const tbody = document.getElementById('recentProjectsBody');
+  const projetosRecentes = projetos.slice(-5).reverse();
 
-        if (projetos.length === 0) {
-          tbody.innerHTML = `
-            <tr>
-              <td colspan="5" class="empty-state">
-                <div class="empty-state-icon">📭</div>
-                <p>Nenhum projeto cadastrado ainda</p>
-              </td>
-            </tr>
-          `;
-          return;
-        }
+  if (projetosRecentes.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="5" class="empty-state">
+          <div class="empty-state-icon">📭</div>
+          <p>Nenhum projeto cadastrado ainda</p>
+        </td>
+      </tr>
+    `;
+    return;
+  }
 
-        tbody.innerHTML = projetos.map(projeto => `
-          <tr>
-            <td><strong>${escapeHtml(projeto.nome_projeto)}</strong></td>
-            <td>${escapeHtml(projeto.quem_elaborou)}</td>
-            <td>${formatDate(projeto.data_cadastro)}</td>
-            <td><span class="status-badge ${projeto.status}">${projeto.status === 'rascunho' ? 'Rascunho' : 'Finalizado'}</span></td>
-            <td>
-              <div class="action-buttons">
-                <button class="btn btn-primary btn-sm" onclick="visualizarProjeto('${projeto.id}')">👁️</button>
-                <button class="btn btn-secondary btn-sm" onclick="editarProjeto('${projeto.id}')">✏️</button>
-                <button class="btn btn-danger btn-sm" onclick="excluirProjeto('${projeto.id}')">🗑️</button>
-              </div>
-            </td>
-          </tr>
-        `).join('');
-      }
-    })
-    .catch(error => {
-      console.error('Erro ao carregar projetos:', error);
-    });
+  tbody.innerHTML = projetosRecentes.map(projeto => `
+    <tr>
+      <td><strong>${escapeHtml(projeto.nome_projeto)}</strong></td>
+      <td>${escapeHtml(projeto.quem_elaborou)}</td>
+      <td>${formatDate(projeto.data_cadastro)}</td>
+      <td><span class="status-badge ${projeto.status}">${projeto.status === 'rascunho' ? 'Rascunho' : 'Finalizado'}</span></td>
+      <td>
+        <div class="action-buttons">
+          <button class="btn btn-primary btn-sm" onclick="visualizarProjeto('${projeto.id}')">👁️</button>
+          <button class="btn btn-secondary btn-sm" onclick="editarProjeto('${projeto.id}')">✏️</button>
+          <button class="btn btn-danger btn-sm" onclick="excluirProjeto('${projeto.id}')">🗑️</button>
+        </div>
+      </td>
+    </tr>
+  `).join('');
 }
 
 function carregarTodosProjetos() {
-  fetch('/api/projetos')
-    .then(response => response.json())
-    .then(data => {
-      if (data.success) {
-        const tbody = document.getElementById('allProjectsBody');
-        const projetos = data.data;
+  const projetos = JSON.parse(localStorage.getItem('projetos') || '[]');
+  const tbody = document.getElementById('allProjectsBody');
 
-        if (projetos.length === 0) {
-          tbody.innerHTML = `
-            <tr>
-              <td colspan="6" class="empty-state">
-                <div class="empty-state-icon">📭</div>
-                <p>Nenhum projeto encontrado</p>
-              </td>
-            </tr>
-          `;
-          return;
-        }
+  if (projetos.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="6" class="empty-state">
+          <div class="empty-state-icon">📭</div>
+          <p>Nenhum projeto encontrado</p>
+        </td>
+      </tr>
+    `;
+    return;
+  }
 
-        tbody.innerHTML = projetos.map(projeto => `
-          <tr>
-            <td><strong>${escapeHtml(projeto.nome_projeto)}</strong></td>
-            <td>${escapeHtml(projeto.quem_elaborou)}</td>
-            <td>${projeto.periodo_execucao_inicio && projeto.periodo_execucao_fim 
-              ? `${formatDate(projeto.periodo_execucao_inicio)} - ${formatDate(projeto.periodo_execucao_fim)}` 
-              : '-'}</td>
-            <td><span class="status-badge ${projeto.status}">${projeto.status === 'rascunho' ? 'Rascunho' : 'Finalizado'}</span></td>
-            <td>${formatDate(projeto.data_cadastro)}</td>
-            <td>
-              <div class="action-buttons">
-                <button class="btn btn-primary btn-sm" onclick="visualizarProjeto('${projeto.id}')">👁️</button>
-                <button class="btn btn-secondary btn-sm" onclick="editarProjeto('${projeto.id}')">✏️</button>
-                <button class="btn btn-danger btn-sm" onclick="excluirProjeto('${projeto.id}')">🗑️</button>
-              </div>
-            </td>
-          </tr>
-        `).join('');
-      }
-    })
-    .catch(error => {
-      console.error('Erro ao carregar projetos:', error);
-    });
+  tbody.innerHTML = projetos.map(projeto => `
+    <tr>
+      <td><strong>${escapeHtml(projeto.nome_projeto)}</strong></td>
+      <td>${escapeHtml(projeto.quem_elaborou)}</td>
+      <td>${projeto.periodo_execucao_inicio && projeto.periodo_execucao_fim 
+        ? `${formatDate(projeto.periodo_execucao_inicio)} - ${formatDate(projeto.periodo_execucao_fim)}` 
+        : '-'}</td>
+      <td><span class="status-badge ${projeto.status}">${projeto.status === 'rascunho' ? 'Rascunho' : 'Finalizado'}</span></td>
+      <td>${formatDate(projeto.data_cadastro)}</td>
+      <td>
+        <div class="action-buttons">
+          <button class="btn btn-primary btn-sm" onclick="visualizarProjeto('${projeto.id}')">👁️</button>
+          <button class="btn btn-secondary btn-sm" onclick="editarProjeto('${projeto.id}')">✏️</button>
+          <button class="btn btn-danger btn-sm" onclick="excluirProjeto('${projeto.id}')">🗑️</button>
+        </div>
+      </td>
+    </tr>
+  `).join('');
 }
 
 // ============================================
@@ -850,201 +737,197 @@ function carregarTodosProjetos() {
 // ============================================
 
 function visualizarProjeto(id) {
-  fetch(`/api/projetos/${id}`)
-    .then(response => response.json())
-    .then(data => {
-      if (data.success) {
-        const projeto = data.data;
-        currentEditingProject = projeto;
+  const projetos = JSON.parse(localStorage.getItem('projetos') || '[]');
+  const projeto = projetos.find(p => p.id === id);
+  
+  if (!projeto) {
+    showToast('Projeto não encontrado', 'error');
+    return;
+  }
+  
+  currentEditingProject = projeto;
 
-        const modalTitle = document.getElementById('modalProjectTitle');
-        const modalBody = document.getElementById('modalBody');
+  const modalTitle = document.getElementById('modalProjectTitle');
+  const modalBody = document.getElementById('modalBody');
 
-        modalTitle.textContent = projeto.nome_projeto;
+  modalTitle.textContent = projeto.nome_projeto;
 
-        modalBody.innerHTML = `
-          <div class="project-details">
-            <div class="detail-section">
-              <h4>Identificação</h4>
-              <div class="detail-item">
-                <strong>Elaborado por:</strong> ${escapeHtml(projeto.quem_elaborou)}
-              </div>
-              <div class="detail-item">
-                <strong>Objeto:</strong> ${escapeHtml(projeto.objeto_projeto) || '-'}
-              </div>
-              <div class="detail-item">
-                <strong>Objetivos:</strong> ${escapeHtml(projeto.objetivos) || '-'}
-              </div>
-              <div class="detail-item">
-                <strong>Justificativa:</strong> ${escapeHtml(projeto.justificativa) || '-'}
-              </div>
-              <div class="detail-item">
-                <strong>Metas e Resultados:</strong> ${escapeHtml(projeto.metas_resultados) || '-'}
-              </div>
-            </div>
+  modalBody.innerHTML = `
+    <div class="project-details">
+      <div class="detail-section">
+        <h4>Identificação</h4>
+        <div class="detail-item">
+          <strong>Elaborado por:</strong> ${escapeHtml(projeto.quem_elaborou)}
+        </div>
+        <div class="detail-item">
+          <strong>Objeto:</strong> ${escapeHtml(projeto.objeto_projeto) || '-'}
+        </div>
+        <div class="detail-item">
+          <strong>Objetivos:</strong> ${escapeHtml(projeto.objetivos) || '-'}
+        </div>
+        <div class="detail-item">
+          <strong>Justificativa:</strong> ${escapeHtml(projeto.justificativa) || '-'}
+        </div>
+        <div class="detail-item">
+          <strong>Metas e Resultados:</strong> ${escapeHtml(projeto.metas_resultados) || '-'}
+        </div>
+      </div>
 
-            <div class="detail-section">
-              <h4>Público e Acessibilidade</h4>
-              <div class="detail-item">
-                <strong>Perfil do público:</strong> ${escapeHtml(projeto.perfil_publico) || '-'}
-              </div>
-              <div class="detail-item">
-                <strong>Estimativa de público:</strong> ${escapeHtml(projeto.estimativa_publico) || '-'}
-              </div>
-              <div class="detail-item">
-                <strong>Estruturas de acessibilidade:</strong> ${escapeHtml(projeto.estruturas_acessibilidade) || '-'}
-              </div>
-              <div class="detail-item">
-                <strong>Lei Distrital 6.858/2021:</strong> ${projeto.lei_acessibilidade_visual ? '✅ Atendido' : '❌ Não atendimento'}
-              </div>
-            </div>
+      <div class="detail-section">
+        <h4>Público e Acessibilidade</h4>
+        <div class="detail-item">
+          <strong>Perfil do público:</strong> ${escapeHtml(projeto.perfil_publico) || '-'}
+        </div>
+        <div class="detail-item">
+          <strong>Estimativa de público:</strong> ${escapeHtml(projeto.estimativa_publico) || '-'}
+        </div>
+        <div class="detail-item">
+          <strong>Estruturas de acessibilidade:</strong> ${escapeHtml(projeto.estruturas_acessibilidade) || '-'}
+        </div>
+        <div class="detail-item">
+          <strong>Lei Distrital 6.858/2021:</strong> ${projeto.lei_acessibilidade_visual ? '✅ Atendido' : '❌ Não atendimento'}
+        </div>
+      </div>
 
-            <div class="detail-section">
-              <h4>Parâmetros</h4>
-              <div class="detail-item">
-                <strong>Cobrança de ingresso:</strong> ${projeto.cobranca_ingresso ? 'Sim' : 'Não'}
-              </div>
-              <div class="detail-item">
-                <strong>Arrecadação de alimentos:</strong> ${projeto.arrecadacao_alimentos ? 'Sim' : 'Não'}
-              </div>
-              <div class="detail-item">
-                <strong>Comercialização de produtos:</strong> ${projeto.comercializacao_produtos ? 'Sim' : 'Não'}
-              </div>
-              <div class="detail-item">
-                <strong>Recursos de outras fontes:</strong> ${projeto.recursos_outras_fontes ? 'Sim' : 'Não'}
-              </div>
-              <div class="detail-item">
-                <strong>Período de Execução:</strong> ${projeto.periodo_execucao_inicio && projeto.periodo_execucao_fim 
-                  ? `${formatDate(projeto.periodo_execucao_inicio)} até ${formatDate(projeto.periodo_execucao_fim)}` 
-                  : '-'}
-              </div>
-            </div>
+      <div class="detail-section">
+        <h4>Parâmetros</h4>
+        <div class="detail-item">
+          <strong>Cobrança de ingresso:</strong> ${projeto.cobranca_ingresso ? 'Sim' : 'Não'}
+        </div>
+        <div class="detail-item">
+          <strong>Arrecadação de alimentos:</strong> ${projeto.arrecadacao_alimentos ? 'Sim' : 'Não'}
+        </div>
+        <div class="detail-item">
+          <strong>Comercialização de produtos:</strong> ${projeto.comercializacao_produtos ? 'Sim' : 'Não'}
+        </div>
+        <div class="detail-item">
+          <strong>Recursos de outras fontes:</strong> ${projeto.recursos_outras_fontes ? 'Sim' : 'Não'}
+        </div>
+        <div class="detail-item">
+          <strong>Período de Execução:</strong> ${projeto.periodo_execucao_inicio && projeto.periodo_execucao_fim 
+            ? `${formatDate(projeto.periodo_execucao_inicio)} até ${formatDate(projeto.periodo_execucao_fim)}` 
+            : '-'}
+        </div>
+      </div>
 
-            ${projeto.ficha_tecnica && projeto.ficha_tecnica.length > 0 ? `
-              <div class="detail-section">
-                <h4>Equipe Técnica (${projeto.ficha_tecnica.length} profissionais)</h4>
-                <table class="data-table">
-                  <thead>
-                    <tr>
-                      <th>Profissional/Empresa</th>
-                      <th>Função</th>
-                      <th>CPF/CNPJ</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    ${projeto.ficha_tecnica.map(item => `
-                      <tr>
-                        <td>${escapeHtml(item.nome_profissional)}</td>
-                        <td>${escapeHtml(item.funcao)}</td>
-                        <td>${escapeHtml(item.cpf_cnpj)}</td>
-                      </tr>
-                    `).join('')}
-                  </tbody>
-                </table>
-              </div>
-            ` : ''}
+      ${projeto.ficha_tecnica && projeto.ficha_tecnica.length > 0 ? `
+        <div class="detail-section">
+          <h4>Equipe Técnica (${projeto.ficha_tecnica.length} profissionais)</h4>
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Profissional/Empresa</th>
+                <th>Função</th>
+                <th>CPF/CNPJ</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${projeto.ficha_tecnica.map(item => `
+                <tr>
+                  <td>${escapeHtml(item.nome_profissional)}</td>
+                  <td>${escapeHtml(item.funcao)}</td>
+                  <td>${escapeHtml(item.cpf_cnpj)}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      ` : ''}
 
-            ${projeto.plano_comunicacao && projeto.plano_comunicacao.length > 0 ? `
-              <div class="detail-section">
-                <h4>Plano de Comunicação (${projeto.plano_comunicacao.length} itens)</h4>
-                <table class="data-table">
-                  <thead>
-                    <tr>
-                      <th>Item/Serviço</th>
-                      <th>Formato/Suporte</th>
-                      <th>Quantidade/Período</th>
-                      <th>Veículo/Circulação</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    ${projeto.plano_comunicacao.map(item => `
-                      <tr>
-                        <td>${escapeHtml(item.item_servico)}</td>
-                        <td>${escapeHtml(item.formato_suporte)}</td>
-                        <td>${escapeHtml(item.quantidade_periodo)}</td>
-                        <td>${escapeHtml(item.veiculo_circulacao)}</td>
-                      </tr>
-                    `).join('')}
-                  </tbody>
-                </table>
-              </div>
-            ` : ''}
-          </div>
-        `;
+      ${projeto.plano_comunicacao && projeto.plano_comunicacao.length > 0 ? `
+        <div class="detail-section">
+          <h4>Plano de Comunicação (${projeto.plano_comunicacao.length} itens)</h4>
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Item/Serviço</th>
+                <th>Formato/Suporte</th>
+                <th>Quantidade/Período</th>
+                <th>Veículo/Circulação</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${projeto.plano_comunicacao.map(item => `
+                <tr>
+                  <td>${escapeHtml(item.item_servico)}</td>
+                  <td>${escapeHtml(item.formato_suporte)}</td>
+                  <td>${escapeHtml(item.quantidade_periodo)}</td>
+                  <td>${escapeHtml(item.veiculo_circulacao)}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      ` : ''}
+    </div>
+  `;
 
-        // Atualizar botões do modal
-        document.getElementById('editProjectBtn').onclick = () => {
-          fecharModal();
-          editarProjeto(id);
-        };
+  // Atualizar botões do modal
+  document.getElementById('editProjectBtn').onclick = () => {
+    fecharModal();
+    editarProjeto(id);
+  };
 
-        document.getElementById('deleteProjectBtn').onclick = () => {
-          if (confirm('Tem certeza que deseja excluir este projeto?')) {
-            excluirProjeto(id);
-            fecharModal();
-          }
-        };
+  document.getElementById('deleteProjectBtn').onclick = () => {
+    if (confirm('Tem certeza que deseja excluir este projeto?')) {
+      excluirProjeto(id);
+      fecharModal();
+    }
+  };
 
-        abrirModal();
-      }
-    })
-    .catch(error => {
-      showToast('Erro ao carregar projeto: ' + error.message, 'error');
-    });
+  abrirModal();
 }
 
 function editarProjeto(id) {
-  fetch(`/api/projetos/${id}`)
-    .then(response => response.json())
-    .then(data => {
-      if (data.success) {
-        const projeto = data.data;
-        currentProjectId = id;
+  const projetos = JSON.parse(localStorage.getItem('projetos') || '[]');
+  const projeto = projetos.find(p => p.id === id);
+  
+  if (!projeto) {
+    showToast('Projeto não encontrado', 'error');
+    return;
+  }
+  
+  currentProjectId = id;
 
-        // Preencher dados básicos
-        document.getElementById('quemElaborou').value = projeto.quem_elaborou || '';
-        document.getElementById('nomeProjeto').value = projeto.nome_projeto || '';
-        document.getElementById('objetoProjeto').value = projeto.objeto_projeto || '';
-        document.getElementById('objetivos').value = projeto.objetivos || '';
-        document.getElementById('justificativa').value = projeto.justificativa || '';
-        document.getElementById('metasResultados').value = projeto.metas_resultados || '';
-        document.getElementById('perfilPublico').value = projeto.perfil_publico || '';
-        document.getElementById('estimativaPublico').value = projeto.estimativa_publico || '';
-        document.getElementById('estruturasAcessibilidade').value = projeto.estruturas_acessibilidade || '';
-        document.getElementById('leiAcessibilidadeVisual').checked = projeto.lei_acessibilidade_visual === 1;
-        document.getElementById('cobrancaIngresso').checked = projeto.cobranca_ingresso === 1;
-        document.getElementById('arrecadacaoAlimentos').checked = projeto.arrecadacao_alimentos === 1;
-        document.getElementById('comercializacaoProdutos').checked = projeto.comercializacao_produtos === 1;
-        document.getElementById('recursosOutrasFontes').checked = projeto.recursos_outras_fontes === 1;
-        document.getElementById('periodoInicio').value = projeto.periodo_execucao_inicio || '';
-        document.getElementById('periodoFim').value = projeto.periodo_execucao_fim || '';
+  // Preencher dados básicos
+  document.getElementById('quemElaborou').value = projeto.quem_elaborou || '';
+  document.getElementById('nomeProjeto').value = projeto.nome_projeto || '';
+  document.getElementById('objetoProjeto').value = projeto.objeto_projeto || '';
+  document.getElementById('objetivos').value = projeto.objetivos || '';
+  document.getElementById('justificativa').value = projeto.justificativa || '';
+  document.getElementById('metasResultados').value = projeto.metas_resultados || '';
+  document.getElementById('perfilPublico').value = projeto.perfil_publico || '';
+  document.getElementById('estimativaPublico').value = projeto.estimativa_publico || '';
+  document.getElementById('estruturasAcessibilidade').value = projeto.estruturas_acessibilidade || '';
+  document.getElementById('leiAcessibilidadeVisual').checked = projeto.lei_acessibilidade_visual === true;
+  document.getElementById('cobrancaIngresso').checked = projeto.cobranca_ingresso === true;
+  document.getElementById('arrecadacaoAlimentos').checked = projeto.arrecadacao_alimentos === true;
+  document.getElementById('comercializacaoProdutos').checked = projeto.comercializacao_produtos === true;
+  document.getElementById('recursosOutrasFontes').checked = projeto.recursos_outras_fontes === true;
+  document.getElementById('periodoInicio').value = projeto.periodo_execucao_inicio || '';
+  document.getElementById('periodoFim').value = projeto.periodo_execucao_fim || '';
 
-        // Carregar dados das tabelas
-        fichaTecnicaData = (projeto.ficha_tecnica || []).map(item => ({
-          id: item.id,
-          nome_profissional: item.nome_profissional,
-          funcao: item.funcao,
-          cpf_cnpj: item.cpf_cnpj
-        }));
+  // Carregar dados das tabelas
+  fichaTecnicaData = (projeto.ficha_tecnica || []).map(item => ({
+    id: item.id || generateId(),
+    nome_profissional: item.nome_profissional,
+    funcao: item.funcao,
+    cpf_cnpj: item.cpf_cnpj
+  }));
 
-        planoComunicacaoData = (projeto.plano_comunicacao || []).map(item => ({
-          id: item.id,
-          item_servico: item.item_servico,
-          formato_suporte: item.formato_suporte,
-          quantidade_periodo: item.quantidade_periodo,
-          veiculo_circulacao: item.veiculo_circulacao
-        }));
+  planoComunicacaoData = (projeto.plano_comunicacao || []).map(item => ({
+    id: item.id || generateId(),
+    item_servico: item.item_servico,
+    formato_suporte: item.formato_suporte,
+    quantidade_periodo: item.quantidade_periodo,
+    veiculo_circulacao: item.veiculo_circulacao
+  }));
 
-        atualizarTabelas();
+  atualizarTabelas();
 
-        // Ir para a página de edição
-        navigateToPage('novo-projeto');
-        showToast('Projeto carregado para edição', 'success');
-      }
-    })
-    .catch(error => {
-      showToast('Erro ao carregar projeto: ' + error.message, 'error');
-    });
+  // Ir para a página de edição
+  navigateToPage('novo-projeto');
+  showToast('Projeto carregado para edição', 'success');
 }
 
 function excluirProjeto(id) {
@@ -1052,23 +935,14 @@ function excluirProjeto(id) {
     return;
   }
 
-  fetch(`/api/projetos/${id}`, {
-    method: 'DELETE'
-  })
-  .then(response => response.json())
-  .then(data => {
-    if (data.success) {
-      showToast('Projeto excluído com sucesso!', 'success');
-      carregarEstatisticas();
-      carregarProjetosRecentes();
-      carregarTodosProjetos();
-    } else {
-      showToast(data.error, 'error');
-    }
-  })
-  .catch(error => {
-    showToast('Erro ao excluir projeto: ' + error.message, 'error');
-  });
+  let projetos = JSON.parse(localStorage.getItem('projetos') || '[]');
+  projetos = projetos.filter(p => p.id !== id);
+  localStorage.setItem('projetos', JSON.stringify(projetos));
+  
+  showToast('Projeto excluído com sucesso!', 'success');
+  carregarEstatisticas();
+  carregarProjetosRecentes();
+  carregarTodosProjetos();
 }
 
 // ============================================
@@ -1087,62 +961,53 @@ function filtrarProjetos() {
   const searchTerm = document.getElementById('searchProjetos').value.toLowerCase();
   const statusFilter = document.getElementById('filterStatus').value;
 
-  fetch('/api/projetos')
-    .then(response => response.json())
-    .then(data => {
-      if (data.success) {
-        let projetos = data.data;
+  let projetos = JSON.parse(localStorage.getItem('projetos') || '[]');
 
-        // Aplicar filtro de busca
-        if (searchTerm) {
-          projetos = projetos.filter(p => 
-            p.nome_projeto.toLowerCase().includes(searchTerm) ||
-            p.quem_elaborou.toLowerCase().includes(searchTerm)
-          );
-        }
+  // Aplicar filtro de busca
+  if (searchTerm) {
+    projetos = projetos.filter(p => 
+      p.nome_projeto.toLowerCase().includes(searchTerm) ||
+      p.quem_elaborou.toLowerCase().includes(searchTerm)
+    );
+  }
 
-        // Aplicar filtro de status
-        if (statusFilter) {
-          projetos = projetos.filter(p => p.status === statusFilter);
-        }
+  // Aplicar filtro de status
+  if (statusFilter) {
+    projetos = projetos.filter(p => p.status === statusFilter);
+  }
 
-        const tbody = document.getElementById('allProjectsBody');
+  const tbody = document.getElementById('allProjectsBody');
 
-        if (projetos.length === 0) {
-          tbody.innerHTML = `
-            <tr>
-              <td colspan="6" class="empty-state">
-                <div class="empty-state-icon">📭</div>
-                <p>Nenhum projeto encontrado</p>
-              </td>
-            </tr>
-          `;
-          return;
-        }
+  if (projetos.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="6" class="empty-state">
+          <div class="empty-state-icon">📭</div>
+          <p>Nenhum projeto encontrado</p>
+        </td>
+      </tr>
+    `;
+    return;
+  }
 
-        tbody.innerHTML = projetos.map(projeto => `
-          <tr>
-            <td><strong>${escapeHtml(projeto.nome_projeto)}</strong></td>
-            <td>${escapeHtml(projeto.quem_elaborou)}</td>
-            <td>${projeto.periodo_execucao_inicio && projeto.periodo_execucao_fim 
-              ? `${formatDate(projeto.periodo_execucao_inicio)} - ${formatDate(projeto.periodo_execucao_fim)}` 
-              : '-'}</td>
-            <td><span class="status-badge ${projeto.status}">${projeto.status === 'rascunho' ? 'Rascunho' : 'Finalizado'}</span></td>
-            <td>${formatDate(projeto.data_cadastro)}</td>
-            <td>
-              <div class="action-buttons">
-                <button class="btn btn-primary btn-sm" onclick="visualizarProjeto('${projeto.id}')">👁️</button>
-                <button class="btn btn-secondary btn-sm" onclick="editarProjeto('${projeto.id}')">✏️</button>
-                <button class="btn btn-danger btn-sm" onclick="excluirProjeto('${projeto.id}')">🗑️</button>
-              </div>
-            </td>
-          </tr>
-        `).join('');
-      }
-    })
-    .catch(error => {
-      console.error('Erro ao filtrar projetos:', error);
-    });
+  tbody.innerHTML = projetos.map(projeto => `
+    <tr>
+      <td><strong>${escapeHtml(projeto.nome_projeto)}</strong></td>
+      <td>${escapeHtml(projeto.quem_elaborou)}</td>
+      <td>${projeto.periodo_execucao_inicio && projeto.periodo_execucao_fim 
+        ? `${formatDate(projeto.periodo_execucao_inicio)} - ${formatDate(projeto.periodo_execucao_fim)}` 
+        : '-'}</td>
+      <td><span class="status-badge ${projeto.status}">${projeto.status === 'rascunho' ? 'Rascunho' : 'Finalizado'}</span></td>
+      <td>${formatDate(projeto.data_cadastro)}</td>
+      <td>
+        <div class="action-buttons">
+          <button class="btn btn-primary btn-sm" onclick="visualizarProjeto('${projeto.id}')">👁️</button>
+          <button class="btn btn-secondary btn-sm" onclick="editarProjeto('${projeto.id}')">✏️</button>
+          <button class="btn btn-danger btn-sm" onclick="excluirProjeto('${projeto.id}')">🗑️</button>
+        </div>
+      </td>
+    </tr>
+  `).join('');
 }
 
 // ============================================
