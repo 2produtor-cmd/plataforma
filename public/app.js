@@ -24,20 +24,7 @@ document.addEventListener('DOMContentLoaded', () => {
   carregarEstatisticas();
   carregarProjetosRecentes();
   
-  // Inicializar Google Drive API após um delay
-  setTimeout(() => {
-    if (typeof window.gapi !== 'undefined') {
-      initializeGoogleAPI();
-    } else {
-      console.log('Google API ainda não carregada, aguardando...');
-      // Tentar novamente em 2 segundos
-      setTimeout(() => {
-        if (typeof window.gapi !== 'undefined') {
-          initializeGoogleAPI();
-        }
-      }, 2000);
-    }
-  }, 1000);
+  // A inicialização da Google API será feita via callback do script
 });
 
 function inicializarAplicacao() {
@@ -314,7 +301,10 @@ function setupTabs() {
   const tabButtons = document.querySelectorAll('.tab-btn');
 
   tabButtons.forEach(btn => {
-    btn.addEventListener('click', () => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault(); // Prevenir submit do formulário
+      e.stopPropagation(); // Parar propagação do evento
+      
       const tabId = btn.dataset.tab;
 
       // Atualizar botões
@@ -1474,10 +1464,9 @@ let isGoogleApiLoaded = false;
 let isSignedIn = false;
 
 // Inicializar Google API
-// Inicializar Google API
 function initGoogleAPI() {
   console.log('Google API carregada com sucesso');
-  // A inicialização será feita quando o usuário clicar em conectar
+  initializeGoogleAPI();
 }
 
 function handleGoogleAPIError() {
@@ -1487,14 +1476,7 @@ function handleGoogleAPIError() {
 
 function initializeGoogleAPI() {
   if (typeof window.gapi === 'undefined') {
-    showToast('Google API não disponível. Tentando recarregar...', 'warning');
-    // Tentar carregar novamente
-    const script = document.createElement('script');
-    script.src = 'https://apis.google.com/js/api.js';
-    script.onload = () => {
-      setTimeout(initializeGoogleAPI, 500);
-    };
-    document.head.appendChild(script);
+    console.log('Google API não disponível ainda');
     return;
   }
   
@@ -1521,7 +1503,7 @@ function initializeGoogleAPI() {
       console.log('Google Drive API inicializada com sucesso');
     } catch (error) {
       console.error('Erro ao inicializar Google API:', error);
-      showToast('Erro ao conectar com Google Drive', 'error');
+      // Não mostrar toast de erro na inicialização
     }
   });
 }
