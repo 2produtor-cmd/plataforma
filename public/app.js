@@ -1422,8 +1422,8 @@ function removeDocument(fileDisplayId) {
 
 // Configurações da API do Google Drive
 const GOOGLE_CONFIG = {
-  CLIENT_ID: '1234567890-abcdefghijklmnopqrstuvwxyz.apps.googleusercontent.com', // Substitua pelo seu Client ID
-  API_KEY: 'AIzaSyABCDEFGHIJKLMNOPQRSTUVWXYZ1234567', // Substitua pela sua API Key
+  CLIENT_ID: '461466760399-2uqqqa00nkchps1g0rohh0mir2ngcu90.apps.googleusercontent.com',
+  API_KEY: 'AIzaSyDScBRBgVpIHI_kDGw32b0O9Mx6bDN1x-g',
   DISCOVERY_DOC: 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest',
   SCOPES: 'https://www.googleapis.com/auth/drive.file'
 };
