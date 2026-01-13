@@ -195,6 +195,24 @@ input, textarea, select {
   display: flex;
   align-items: center;
   gap: var(--spacing-md);
+  position: relative;
+}
+
+.logout-btn {
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.7);
+  border: none;
+  padding: var(--spacing-xs);
+  border-radius: var(--radius-sm);
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  margin-left: auto;
+}
+
+.logout-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  color: var(--text-light);
 }
 
 .user-avatar {

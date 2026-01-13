@@ -8,6 +8,13 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
+  <script>
+    // Verificar autenticação
+    if (!localStorage.getItem('authenticated')) {
+      window.location.href = 'login.html';
+    }
+  </script>
+  
   <!-- Sidebar Lateral -->
   <aside class="sidebar" id="sidebar">
     <div class="sidebar-header">
@@ -43,6 +50,7 @@
           <span class="user-name">2 Produções</span>
           <span class="user-role">Administrador</span>
         </div>
+        <button class="logout-btn" onclick="logout()" title="Sair">🚪</button>
       </div>
     </div>
   </aside>

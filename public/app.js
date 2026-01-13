@@ -1234,3 +1234,12 @@ function escapeHtml(text) {
   div.textContent = text;
   return div.innerHTML;
 }
+
+// ============================================
+// AUTENTICAÇÃO
+// ============================================
+
+function logout() {
+  localStorage.removeItem('authenticated');
+  window.location.href = 'login.html';
+}
