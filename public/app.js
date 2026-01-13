@@ -21,6 +21,11 @@ document.addEventListener('DOMContentLoaded', () => {
   inicializarAplicacao();
   carregarEstatisticas();
   carregarProjetosRecentes();
+  
+  // Inicializar Google Drive API
+  setTimeout(() => {
+    initializeGoogleAPI();
+  }, 1000);
 });
 
 function inicializarAplicacao() {
@@ -127,6 +132,18 @@ function setupButtons() {
   document.getElementById('btnNovoProjeto').addEventListener('click', () => {
     resetForm();
     navigateToPage('novo-projeto');
+  });
+
+  // Botão Sincronizar Drive
+  document.getElementById('syncDriveBtn').addEventListener('click', (e) => {
+    e.preventDefault();
+    toggleGoogleDrive();
+  });
+
+  // Botão Restaurar Drive
+  document.getElementById('restoreDriveBtn').addEventListener('click', (e) => {
+    e.preventDefault();
+    restoreFromGoogleDrive();
   });
 
   // Voltar ao dashboard
@@ -607,6 +624,14 @@ function salvarProjeto(status) {
   localStorage.setItem('projetos', JSON.stringify(projetos));
   
   showToast(status === 'finalizado' ? 'Projeto finalizado com sucesso!' : 'Rascunho salvo com sucesso!', 'success');
+  
+  // Backup automático se conectado ao Drive
+  if (isSignedIn && projetos.length > 0) {
+    setTimeout(() => {
+      backupToGoogleDrive();
+    }, 2000);
+  }
+  
   resetForm();
   currentProjectId = null;
   navigateToPage('dashboard');
@@ -1098,6 +1123,193 @@ function escapeHtml(text) {
   const div = document.createElement('div');
   div.textContent = text;
   return div.innerHTML;
+}
+
+// ============================================
+// GOOGLE DRIVE INTEGRATION
+// ============================================
+
+// Configurações da API do Google Drive
+const GOOGLE_CONFIG = {
+  CLIENT_ID: '1234567890-abcdefghijklmnopqrstuvwxyz.apps.googleusercontent.com', // Substitua pelo seu Client ID
+  API_KEY: 'AIzaSyABCDEFGHIJKLMNOPQRSTUVWXYZ1234567', // Substitua pela sua API Key
+  DISCOVERY_DOC: 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest',
+  SCOPES: 'https://www.googleapis.com/auth/drive.file'
+};
+
+let gapi;
+let isGoogleApiLoaded = false;
+let isSignedIn = false;
+
+// Inicializar Google API
+function initializeGoogleAPI() {
+  if (typeof window.gapi === 'undefined') {
+    showToast('Google API não carregada. Verifique sua conexão.', 'error');
+    return;
+  }
+  
+  gapi = window.gapi;
+  
+  gapi.load('auth2:client', async () => {
+    try {
+      await gapi.client.init({
+        apiKey: GOOGLE_CONFIG.API_KEY,
+        clientId: GOOGLE_CONFIG.CLIENT_ID,
+        discoveryDocs: [GOOGLE_CONFIG.DISCOVERY_DOC],
+        scope: GOOGLE_CONFIG.SCOPES
+      });
+      
+      isGoogleApiLoaded = true;
+      const authInstance = gapi.auth2.getAuthInstance();
+      isSignedIn = authInstance.isSignedIn.get();
+      
+      updateSyncButton();
+      
+      if (isSignedIn) {
+        showToast('Conectado ao Google Drive', 'success');
+      }
+    } catch (error) {
+      console.error('Erro ao inicializar Google API:', error);
+      showToast('Erro ao conectar com Google Drive', 'error');
+    }
+  });
+}
+
+// Atualizar botão de sincronização
+function updateSyncButton() {
+  const syncBtn = document.getElementById('syncDriveBtn');
+  const restoreBtn = document.getElementById('restoreDriveBtn');
+  const syncText = syncBtn.querySelector('.nav-text');
+  
+  if (isSignedIn) {
+    syncText.textContent = 'Backup Drive';
+    syncBtn.style.color = '#10B981';
+    restoreBtn.style.display = 'flex';
+  } else {
+    syncText.textContent = 'Conectar Drive';
+    syncBtn.style.color = '';
+    restoreBtn.style.display = 'none';
+  }
+}
+
+// Conectar/Desconectar Google Drive
+async function toggleGoogleDrive() {
+  if (!isGoogleApiLoaded) {
+    showToast('Google API ainda não foi carregada', 'warning');
+    return;
+  }
+  
+  const authInstance = gapi.auth2.getAuthInstance();
+  
+  if (isSignedIn) {
+    // Fazer backup
+    await backupToGoogleDrive();
+  } else {
+    // Conectar
+    try {
+      await authInstance.signIn();
+      isSignedIn = true;
+      updateSyncButton();
+      showToast('Conectado ao Google Drive com sucesso!', 'success');
+    } catch (error) {
+      console.error('Erro ao conectar:', error);
+      showToast('Erro ao conectar com Google Drive', 'error');
+    }
+  }
+}
+
+// Fazer backup dos dados para Google Drive
+async function backupToGoogleDrive() {
+  if (!isSignedIn) {
+    showToast('Não conectado ao Google Drive', 'error');
+    return;
+  }
+  
+  try {
+    const projetos = JSON.parse(localStorage.getItem('projetos') || '[]');
+    const backupData = {
+      timestamp: new Date().toISOString(),
+      version: '1.0',
+      projetos: projetos
+    };
+    
+    const fileName = `2producoes_backup_${new Date().toISOString().split('T')[0]}.json`;
+    
+    // Criar arquivo no Google Drive
+    const fileMetadata = {
+      name: fileName,
+      parents: ['appDataFolder'] // Pasta privada da aplicação
+    };
+    
+    const form = new FormData();
+    form.append('metadata', new Blob([JSON.stringify(fileMetadata)], {type: 'application/json'}));
+    form.append('file', new Blob([JSON.stringify(backupData, null, 2)], {type: 'application/json'}));
+    
+    const response = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${gapi.auth2.getAuthInstance().currentUser.get().getAuthResponse().access_token}`
+      },
+      body: form
+    });
+    
+    if (response.ok) {
+      showToast(`Backup realizado com sucesso! (${projetos.length} projetos)`, 'success');
+    } else {
+      throw new Error('Falha no upload');
+    }
+  } catch (error) {
+    console.error('Erro no backup:', error);
+    showToast('Erro ao fazer backup: ' + error.message, 'error');
+  }
+}
+
+// Restaurar dados do Google Drive
+async function restoreFromGoogleDrive() {
+  if (!isSignedIn) {
+    showToast('Não conectado ao Google Drive', 'error');
+    return;
+  }
+  
+  try {
+    // Listar arquivos de backup
+    const response = await gapi.client.drive.files.list({
+      q: "name contains '2producoes_backup' and parents in 'appDataFolder'",
+      orderBy: 'createdTime desc',
+      pageSize: 10
+    });
+    
+    const files = response.result.files;
+    if (files.length === 0) {
+      showToast('Nenhum backup encontrado no Google Drive', 'warning');
+      return;
+    }
+    
+    // Pegar o backup mais recente
+    const latestBackup = files[0];
+    
+    // Baixar o arquivo
+    const fileResponse = await gapi.client.drive.files.get({
+      fileId: latestBackup.id,
+      alt: 'media'
+    });
+    
+    const backupData = JSON.parse(fileResponse.body);
+    
+    if (confirm(`Restaurar backup de ${new Date(backupData.timestamp).toLocaleString()}? Isso substituirá todos os dados atuais.`)) {
+      localStorage.setItem('projetos', JSON.stringify(backupData.projetos));
+      
+      // Recarregar dados na interface
+      carregarEstatisticas();
+      carregarProjetosRecentes();
+      carregarTodosProjetos();
+      
+      showToast(`Backup restaurado! (${backupData.projetos.length} projetos)`, 'success');
+    }
+  } catch (error) {
+    console.error('Erro ao restaurar:', error);
+    showToast('Erro ao restaurar backup: ' + error.message, 'error');
+  }
 }
 
 // ============================================
